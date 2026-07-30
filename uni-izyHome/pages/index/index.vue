@@ -2,7 +2,7 @@
   <view class="home-container">
     <!-- 1. 顶部自定义导航与社区选择 -->
     <view class="header-section">
-      <view class="brand-title">志愿者家园</view>
+      <view class="brand-title">温馨家园</view>
       <view class="community-selector" @click="openCommunitySelector">
         <text class="community-name">{{ currentCommunityName }}</text>
         <text class="switch-btn">切换</text>
@@ -191,7 +191,7 @@ export default {
   },
   data() {
     return {
-      currentCommunityName: "",
+      currentCommunityName: "财厅前社区",
       showCommunitySelector: false,
       showNfcCheckinSuccess: false,
       nfcCheckinParams: {},

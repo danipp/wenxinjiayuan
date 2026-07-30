@@ -45,7 +45,7 @@
       <!-- 温馨提示 -->
       <div class="security-tips">
         <u-icon name="phone-fill" color="#07c160" size="14"></u-icon>
-        <text class="tips-text">志愿者家园将严格保护您的个人隐私安全</text>
+        <text class="tips-text">温馨家园将严格保护您的个人隐私安全</text>
       </div>
     </div>
   </u-popup>
