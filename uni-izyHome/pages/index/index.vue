@@ -56,7 +56,7 @@
           v-for="item in leftActivities"
           :key="item.id"
           class="activity-card"
-          @click="navigateTo('activity', item.id)"
+          @click="goDetial(item.id)"
         >
           <image
             class="cover-image"
@@ -176,6 +176,8 @@
       @submit-success="handleNfcSubmitSuccess"
       @close="showNfcCheckinSuccess = false"
     />
+    <!-- 手机授权弹窗 -->
+    <PhoneAuthPopup :show.sync="showPhoneAuth" />
   </view>
 </template>
 
@@ -183,14 +185,16 @@
 // 引入您此前封装好的社区选择器组件
 import CommunitySelector from "@/components/community.vue";
 import NfcCheckinSuccess from "./components/NfcCheckinSuccess.vue";
-
+import PhoneAuthPopup from "@/components/PhoneAuthPopup.vue";
 export default {
   components: {
     CommunitySelector,
+    PhoneAuthPopup,
     NfcCheckinSuccess,
   },
   data() {
     return {
+      showPhoneAuth: false,
       currentCommunityName: "财厅前社区",
       showCommunitySelector: false,
       showNfcCheckinSuccess: false,
@@ -353,6 +357,16 @@ export default {
           icon: "none",
         });
       }
+    },
+    goDetial(id) {
+      let user_phone_number = uni.getStorageSync("user_phone_number") || null;
+      if (!user_phone_number) {
+        this.showPhoneAuth = true;
+        return;
+      }
+      uni.navigateTo({
+        url: `/spages/activity/detail?id=${id}`,
+      });
     },
     // 集中式页面路由跳转逻辑
     navigateTo(type, item) {
