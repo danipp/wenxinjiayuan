@@ -46,17 +46,30 @@
 
     <!-- 4. 热门推荐瀑布流区 -->
     <view class="section-title-bar">
-      <text class="title">热门推荐</text>
+      <view class="tabs-box">
+        <text
+          class="tab-item"
+          :class="{ active: currentTab === 'community' }"
+          @click="currentTab = 'community'"
+          >社区活动</text
+        >
+        <text
+          class="tab-item"
+          :class="{ active: currentTab === 'recruitment' }"
+          @click="currentTab = 'recruitment'"
+          >招募活动</text
+        >
+      </view>
     </view>
 
-    <view class="content-flow-layout">
+    <view class="content-flow-layout" v-if="currentTab === 'community'">
       <!-- 左列：纯活动流 -->
       <view class="flow-column">
         <view
           v-for="item in leftActivities"
           :key="item.id"
           class="activity-card"
-          @click="goDetial(item.id)"
+          @click="goDetail(item.id)"
         >
           <image
             class="cover-image"
@@ -162,6 +175,10 @@
       </view>
     </view>
 
+    <view class="recruitment-container" v-if="currentTab === 'recruitment'">
+      <RecruitmentList @goDetail="goDetail" />
+    </view>
+
     <!-- 底部引入我们之前封装好的社区选择弹窗组件 -->
     <CommunitySelector
       :show.sync="showCommunitySelector"
@@ -186,14 +203,17 @@
 import CommunitySelector from "@/components/community.vue";
 import NfcCheckinSuccess from "./components/NfcCheckinSuccess.vue";
 import PhoneAuthPopup from "@/components/PhoneAuthPopup.vue";
+import RecruitmentList from "./components/RecruitmentList.vue";
 export default {
   components: {
     CommunitySelector,
     PhoneAuthPopup,
     NfcCheckinSuccess,
+    RecruitmentList,
   },
   data() {
     return {
+      currentTab: "community",
       showPhoneAuth: false,
       currentCommunityName: "财厅前社区",
       showCommunitySelector: false,
@@ -358,7 +378,7 @@ export default {
         });
       }
     },
-    goDetial(id) {
+    goDetail(id) {
       let user_phone_number = uni.getStorageSync("user_phone_number") || null;
       if (!user_phone_number) {
         this.showPhoneAuth = true;
@@ -569,10 +589,37 @@ export default {
   .section-title-bar {
     margin-bottom: 24rpx;
 
-    .title {
-      font-size: 36rpx;
-      font-weight: 800;
-      color: #1a202c;
+    .tabs-box {
+      display: flex;
+      align-items: center;
+      gap: 32rpx;
+
+      .tab-item {
+        font-size: 32rpx;
+        color: #718096;
+        font-weight: 600;
+        position: relative;
+        padding-bottom: 8rpx;
+        transition: all 0.2s;
+
+        &.active {
+          font-size: 36rpx;
+          color: #1a202c;
+          font-weight: 800;
+
+          &::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: 32rpx;
+            height: 6rpx;
+            background-color: #07c160;
+            border-radius: 4rpx;
+          }
+        }
+      }
     }
   }
 
