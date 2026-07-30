@@ -56,7 +56,6 @@ export default async (options) => { //传入的options是一个json对象
   let hasRedirected = store.state.isLogin.hasRedirected
   return new Promise((resolve, reject) => {
     let token = getToken() || '';
-    let key = Vue.prototype.$map.get('_key') || '';
     // if (!options.dis_loading) {
     //   uni.showLoading({
     //     mask: true
@@ -71,12 +70,11 @@ export default async (options) => { //传入的options是一个json对象
       method: options.method || "GET",
       data: options.data || {},
       header: {
-        "gcToken": getToken(),
+        "token": getToken(),
         "Content-Type": "application/json",
       },
       success: res => {
         if (res.data.code == 'A0401' && !hasRedirected) {
-          Vue.prototype.$map.clear();
           store.commit('isLogin/SET_REDIRECTED', true)
           removeToken()
 
@@ -116,9 +114,9 @@ export default async (options) => { //传入的options是一个json对象
         resolve(err)
       },
       complete: res => {
-        // uni.hideLoading({
-        //   noConflict: true
-        // })
+        uni.hideLoading({
+          noConflict: true
+        })
       }
     })
   })
