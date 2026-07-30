@@ -1,0 +1,293 @@
+{
+  "easycom": {
+    "^u-(.*)": "@/uni_modules/uview-ui/components/u-$1/u-$1.vue"
+  },
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "首页",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mine/index",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/service/index",
+      "style": {
+        "navigationBarTitleText": "服务"
+      }
+    },
+    {
+      "path": "pages/special/index",
+      "style": {
+        "navigationBarTitleText": "社区特惠",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/store/index",
+      "style": {
+        "navigationBarTitleText": "公益超市"
+      }
+    }
+  ],
+  "subPackages": [
+    {
+      "root": "spages",
+      "pages": [
+        {
+          "path": "service/create",
+          "style": {
+            "navigationBarTitleText": "创建服务"
+          }
+        },
+        {
+          "path": "service/member",
+          "style": {
+            "navigationBarTitleText": "选择人员"
+          }
+        },
+        {
+          "path": "mine/profile/index",
+          "style": {
+            "navigationBarTitleText": "个人资料"
+          }
+        },
+        {
+          "path": "mine/myActivities/index",
+          "style": {
+            "navigationBarTitleText": "我的活动"
+          }
+        },
+        {
+          "path": "mine/helpRecords/index",
+          "style": {
+            "navigationBarTitleText": "帮忙记录"
+          }
+        },
+        {
+          "path": "mine/demandRecords/index",
+          "style": {
+            "navigationBarTitleText": "发布需求记录"
+          }
+        },
+        {
+          "path": "mine/checkinRecords/index",
+          "style": {
+            "navigationBarTitleText": "打卡记录"
+          }
+        },
+        {
+          "path": "mine/checkinFrame/index",
+          "style": {
+            "navigationBarTitleText": "购买打卡相框"
+          }
+        },
+        {
+          "path": "mine/checkinFrame/order",
+          "style": {
+            "navigationBarTitleText": "订单"
+          }
+        },
+        {
+          "path": "mine/followedList/index",
+          "style": {
+            "navigationBarTitleText": "关注列表"
+          }
+        },
+        {
+          "path": "mine/emergencyContacts/index",
+          "style": {
+            "navigationBarTitleText": "紧急联系人"
+          }
+        },
+        {
+          "path": "mine/emergencyContacts/add",
+          "style": {
+            "navigationBarTitleText": "添加紧急联系人"
+          }
+        },
+        {
+          "path": "mine/collect/index",
+          "style": {
+            "navigationBarTitleText": "收藏"
+          }
+        },
+        {
+          "path": "mine/store/index",
+          "style": {
+            "navigationBarTitleText": "个人云店"
+          }
+        },
+        {
+          "path": "mine/store/editInfo",
+          "style": {
+            "navigationBarTitleText": "编辑店铺信息"
+          }
+        },
+        {
+          "path": "invite/index",
+          "style": {
+            "navigationBarTitleText": "居民认证"
+          }
+        },
+        {
+          "path": "fun/index",
+          "style": {
+            "navigationBarTitleText": "找点乐子"
+          }
+        },
+        {
+          "path": "fun/create",
+          "style": {
+            "navigationBarTitleText": "发布活动"
+          }
+        },
+        {
+          "path": "fun/square",
+          "style": {
+            "navigationBarTitleText": "活动广场"
+          }
+        },
+        {
+          "path": "fun/squareDetail",
+          "style": {
+            "navigationBarTitleText": "活动详情"
+          }
+        },
+        {
+          "path": "deeds/index",
+          "style": {
+            "navigationBarTitleText": "互助信息"
+          }
+        },
+        {
+          "path": "deeds/detail",
+          "style": {
+            "navigationBarTitleText": "互助信息"
+          }
+        },
+        {
+          "path": "daren/index",
+          "style": {
+            "navigationBarTitleText": "本周达人榜"
+          }
+        },
+        {
+          "path": "activity/detail",
+          "style": {
+            "navigationBarTitleText": "活动详情",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "activity/comments",
+          "style": {
+            "navigationBarTitleText": "活动评价"
+          }
+        },
+        {
+          "path": "activity/writeComment",
+          "style": {
+            "navigationBarTitleText": "写评价"
+          }
+        },
+        {
+          "path": "store/detail",
+          "style": {
+            "navigationBarTitleText": "商品详情"
+          }
+        },
+        {
+          "path": "store/order/order",
+          "style": {
+            "navigationBarTitleText": "订单列表"
+          }
+        },
+        {
+          "path": "store/order/comments",
+          "style": {
+            "navigationBarTitleText": "写评价"
+          }
+        },
+        {
+          "path": "store/shop/index",
+          "style": {
+            "navigationBarTitleText": "个人云店"
+          }
+        },
+        {
+          "path": "store/goods/comments",
+          "style": {
+            "navigationBarTitleText": "商品评价"
+          }
+        },
+        {
+          "path": "special/shop/index",
+          "style": {
+            "navigationBarTitleText": "店铺详情"
+          }
+        }
+      ]
+    }
+  ],
+  "tabBar": {
+    "color": "#7a7e83",
+    "selectedColor": "#DB092B",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/img/home.png",
+        "selectedIconPath": "static/img/home_actived.png"
+      },
+      {
+        "pagePath": "pages/service/index",
+        "text": "服务",
+        "iconPath": "static/img/fee.png",
+        "selectedIconPath": "static/img/fee_actived.png"
+      },
+      {
+        "pagePath": "pages/store/index",
+        "text": "公益超市",
+        "iconPath": "static/img/store.png",
+        "selectedIconPath": "static/img/store_actived.png"
+      },
+      {
+        "pagePath": "pages/special/index",
+        "text": "社区特惠",
+        "iconPath": "static/img/special.png",
+        "selectedIconPath": "static/img/special_actived.png"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的",
+        "iconPath": "static/img/my.png",
+        "selectedIconPath": "static/img/my_actived.png"
+      }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "项目模板",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "uniIdRouter": {},
+  "condition": {
+    "current": 0,
+    "list": [
+      {
+        "name": "",
+        "path": "",
+        "query": ""
+      }
+    ]
+  }
+}

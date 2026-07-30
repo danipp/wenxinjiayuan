@@ -1,0 +1,82 @@
+page {
+	background-color: #f1f1f1;
+	font-size: 28rpx;
+	color: #333333;
+	font-family: Helvetica Neue, Helvetica, sans-serif;
+}
+
+view,
+scroll-view,
+swiper,
+button,
+input,
+textarea,
+label,
+navigator,
+image {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	display: block;
+}
+
+/* ==================
+          图片
+ ==================== */
+.line1 {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.line2 {
+	overflow: hidden;
+	-webkit-line-clamp: 2;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+}
+.line3 {
+	overflow: hidden;
+	-webkit-line-clamp: 3;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+}
+.flex{
+	display: flex;
+	align-items: center;
+}
+.flex-wrap{
+	flex-wrap: wrap;
+}
+.flex-center{
+	align-items: center;
+	justify-content: center;
+}
+.flex-start{
+	align-items: flex-start;
+	justify-content: flex-start;
+}
+.flex-end{
+	align-items: flex-end;
+	justify-content: flex-end;
+}
+.flex-between{
+	align-items: center;
+	justify-content: space-between;
+}
+.flex-around{
+	align-items: center;
+	justify-content: space-around;
+}
+.flex-column{
+	flex-direction: column;
+}
+
+image {
+	max-width: 100%;
+	display: inline-block;
+	position: relative;
+	z-index: 0;
+}

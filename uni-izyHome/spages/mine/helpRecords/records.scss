@@ -1,0 +1,181 @@
+.records-page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f7f9fb;
+
+    .filter-box {
+        position: relative;
+        z-index: 100;
+    }
+
+    .list-scroll {
+        height: calc(100vh - 88rpx);
+    }
+
+    .card-list {
+        padding: 28rpx;
+        display: flex;
+        flex-direction: column;
+        gap: 24rpx;
+    }
+
+    .deeds-card {
+        background-color: #ffffff;
+        border-radius: 24rpx;
+        padding: 32rpx;
+        box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.01);
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2rpx solid #f2f2f2;
+            padding-bottom: 20rpx;
+            margin-bottom: 24rpx;
+
+            .title {
+                font-size: 32rpx;
+                font-weight: bold;
+                color: #1a202c;
+            }
+
+            .badge-status {
+                font-size: 22rpx;
+                font-weight: bold;
+                color: #0284c7;
+                background-color: #e0f2fe;
+                padding: 6rpx 16rpx;
+                border-radius: 8rpx;
+
+                &.pending {
+                    background-color: #fff7e6;
+                    color: #d97706;
+                }
+
+                &.helping {
+                    background-color: #e0f2fe;
+                    color: #0284c7;
+                }
+
+                &.toEvaluate {
+                    background-color: #fff1dc;
+                    color: #ff8a00;
+                }
+
+                &.completed {
+                    background-color: #e6f7ee;
+                    color: #07c160;
+                }
+
+                &.expired {
+                    background-color: #f1f5f9;
+                    color: #94a3b8;
+                }
+            }
+        }
+
+        .card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 12rpx;
+
+            .info-row {
+                display: flex;
+                font-size: 27rpx;
+
+                .label {
+                    color: #94a3b8;
+                    width: 100rpx;
+                }
+
+                .val {
+                    color: #334155;
+                    flex: 1;
+                }
+            }
+        }
+    }
+
+    /* 极简扁平化药盒眨眼表情 CSS */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding-top: 300rpx;
+
+        .pill-box-icon {
+            width: 128rpx;
+            height: 128rpx;
+            background-color: #e6f7ee;
+            border: 6rpx solid #bce6cf;
+            border-radius: 36rpx;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &::before {
+                content: '';
+                position: absolute;
+                top: -20rpx;
+                width: 28rpx;
+                height: 14rpx;
+                background-color: #bce6cf;
+                border-radius: 6rpx 6rpx 0 0;
+            }
+
+            .face {
+                width: 100%;
+                height: 100%;
+                position: relative;
+
+                .eye {
+                    position: absolute;
+                    top: 44rpx;
+                    width: 12rpx;
+                    height: 12rpx;
+                    background-color: #07c160;
+                    border-radius: 50%;
+
+                    &.winking {
+                        left: 32rpx;
+                        height: 6rpx;
+                        border-radius: 0 0 20rpx 20rpx;
+                        background: none;
+                        border-bottom: 4rpx solid #07c160;
+                    }
+
+                    &.normal {
+                        right: 32rpx;
+                    }
+                }
+
+                .smile {
+                    position: absolute;
+                    bottom: 32rpx;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 24rpx;
+                    height: 12rpx;
+                    border-bottom: 4rpx solid #07c160;
+                    border-radius: 0 0 24rpx 24rpx;
+                }
+            }
+        }
+
+        .empty-text {
+            font-size: 28rpx;
+            color: #94a3b8;
+            font-weight: bold;
+            margin-top: 32rpx;
+        }
+
+        .pull-tips {
+            font-size: 22rpx;
+            color: #cbd5e1;
+            margin-top: 8rpx;
+        }
+    }
+}
