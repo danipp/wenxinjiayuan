@@ -22,7 +22,7 @@
 
                         <view class="info-row">
                             <u-icon name="map-fill" color="#8c9ba5" size="14"></u-icon>
-                            <text class="info-text text-ellipsis">地点：{{ item.location }}</text>
+                            <text class="info-text text-ellipsis">地点：{{ item.location || '待定' }}</text>
                         </view>
 
                         <view class="info-row">
@@ -30,14 +30,13 @@
                             <text class="info-text">时间：{{ item.time }}</text>
                         </view>
 
+                        <!-- 状态标签 -->
+                        <view v-if="item.statusText" class="status-row">
+                            <text class="status-tag" :class="item.status === 1 ? 'status-upcoming' : item.status === 2 ? 'status-ongoing' : 'status-ended'">{{ item.statusText }}</text>
+                        </view>
+
                         <view class="participants-box">
-                            <view class="avatar-group">
-                                <image v-for="(avatar, idx) in item.avatars.slice(0, 3)" :key="idx" class="avatar-img"
-                                    :src="avatar" mode="aspectFill"></image>
-                                <view v-if="item.avatars.length > 3" class="avatar-more">+{{ item.avatars.length }}
-                                </view>
-                            </view>
-                            <text class="participants-text">同社区 {{ item.enrollCount }} 人已报名</text>
+                            <text class="participants-text">{{ item.enrollCount || 0 }} 人已报名</text>
                         </view>
 
                         <!-- 操作按钮组（修复：通过 dataset 传递分享参数） -->
@@ -82,6 +81,7 @@
 
 <script>
 import CommunitySelector from '@/components/community.vue';
+import { square } from '@/spages/api/activity'
 
 export default {
     components: {
@@ -93,42 +93,10 @@ export default {
             showCommunitySelector: false,
             activityList: [],
             page: 1,
+            pageSize: 10,
             loading: false,
             noMore: false,
             isRefreshing: false,
-            mockDatabase: {
-                '中山一社区': [
-                    {
-                        id: 1,
-                        title: '中山一社区居民瓜子会',
-                        image: 'https://cdn.uviewui.com/uview/album/3.jpg',
-                        location: '越秀区富力新天地中心(雄镇外街南)',
-                        time: '07-01 16:02 至 07-01 23:02',
-                        enrollCount: 2,
-                        avatars: ['https://cdn.uviewui.com/uview/album/1.jpg', 'https://cdn.uviewui.com/uview/album/2.jpg']
-                    },
-                    {
-                        id: 2,
-                        title: '同城周未桌游狼人杀交友社',
-                        image: 'https://cdn.uviewui.com/uview/album/4.jpg',
-                        location: '越秀区中山一路创意园B栋',
-                        time: '07-08 14:00 至 07-08 19:00',
-                        enrollCount: 5,
-                        avatars: ['https://cdn.uviewui.com/uview/album/5.jpg', 'https://cdn.uviewui.com/uview/album/6.jpg', 'https://cdn.uviewui.com/uview/album/7.jpg']
-                    }
-                ],
-                '都府社区': [
-                    {
-                        id: 3,
-                        title: '都府社区中老年太极拳交流会',
-                        image: 'https://cdn.uviewui.com/uview/album/8.jpg',
-                        location: '都府社区文化小广场',
-                        time: '07-15 08:00 至 07-15 10:00',
-                        enrollCount: 8,
-                        avatars: ['https://cdn.uviewui.com/uview/album/2.jpg', 'https://cdn.uviewui.com/uview/album/4.jpg']
-                    }
-                ]
-            }
         };
     },
     onLoad() {
@@ -158,37 +126,74 @@ export default {
             this.fetchData();
         },
 
-        fetchData() {
+        async fetchData() {
             if (this.loading || this.noMore) return;
             this.loading = true;
-            uni.showLoading({
-                title: '加载中...',
-                mask: true
-            })
-            setTimeout(() => {
-                const dbData = this.mockDatabase[this.currentCommunityName] || [];
 
-                if (dbData.length === 0) {
-                    this.activityList = [];
-                    this.noMore = true;
+            try {
+                const res = await square({
+                    pageNumber: this.page,
+                    pageSize: this.pageSize,
+                });
+
+                const pageData = res.data || {};
+                const list = pageData.content || [];
+                const isLast = pageData.last !== undefined ? pageData.last : list.length < this.pageSize;
+
+                // 映射接口字段到页面展示字段
+                const mappedList = list.map(item => ({
+                    id: item.activityId || item.id,
+                    title: item.title || '',
+                    image: item.coverImage || '',
+                    location: item.location || '',
+                    time: this.formatTime(item.startTime, item.endTime),
+                    enrollCount: item.participantCount || 0,
+                    status: item.status,
+                    statusText: item.statusText || '',
+                    authorName: item.authorName || '',
+                    authorAvatar: item.authorAvatar || '',
+                    tag: item.tag || '',
+                }));
+
+                if (this.page === 1) {
+                    this.activityList = mappedList;
                 } else {
-                    if (this.page === 1) {
-                        this.activityList = dbData;
-                        this.noMore = dbData.length < 2;
-                    } else {
-                        this.noMore = true;
-                    }
+                    this.activityList = [...this.activityList, ...mappedList];
                 }
 
+                this.noMore = isLast;
+                this.page++;
+            } catch (e) {
+                uni.showToast({ title: '加载失败，请重试', icon: 'none' });
+            } finally {
                 this.loading = false;
                 this.isRefreshing = false;
-                this.$hide()
-            }, 800);
+            }
+        },
+
+        // 格式化时间区间
+        formatTime(startTime, endTime) {
+            if (!startTime) return '待定';
+            const fmt = (str) => {
+                if (!str) return '';
+                // 兼容不同日期格式
+                const d = new Date(str.replace(/-/g, '/'));
+                if (isNaN(d.getTime())) return str;
+                const M = (d.getMonth() + 1).toString().padStart(2, '0');
+                const D = d.getDate().toString().padStart(2, '0');
+                const h = d.getHours().toString().padStart(2, '0');
+                const m = d.getMinutes().toString().padStart(2, '0');
+                return `${M}-${D} ${h}:${m}`;
+            };
+            const start = fmt(startTime);
+            const end = fmt(endTime);
+            if (start && end) return `${start} 至 ${end}`;
+            if (start) return start;
+            return '待定';
         },
 
         loadMore() {
             if (!this.noMore && !this.loading) {
-                this.page++;
                 this.fetchData();
             }
         },
