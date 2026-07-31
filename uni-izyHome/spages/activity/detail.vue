@@ -3,6 +3,9 @@
     <cu-custom>
       <view style="font-weight: 500; font-size: 32rpx">活动详情</view>
     </cu-custom>
+    <view class="banner">
+      <image :src="activity.coverImage" mode="widthFix" style="width: 100%" />
+    </view>
     <view class="detail-container">
       <!-- 1. 顶部活动基本信息 -->
       <ActivityBaseCard
@@ -17,13 +20,14 @@
         <ReviewSection
           :idx="activity.id"
           :reviews="reviews"
+          :reviewTotal="reviewTotal"
           @write="handleDraftPrompt"
           @view-all="goToAllReviews"
         />
         <PhotoSection
           :idx="activity.id"
           :photoList="photoList"
-          @refresh="getList"
+          @refresh="refreshPhotos"
           @view-photo="openPhotoViewer"
         />
       </template>
@@ -89,6 +93,14 @@ import PhotoSection from "./components/PhotoSection.vue";
 import LiveContent from "./components/LiveContent.vue";
 import SignupFooter from "./components/SignupFooter.vue";
 import IntroPopup from "./components/IntroPopup.vue";
+import {
+  detail5,
+  signup,
+  joined,
+  comments,
+  photos,
+  averageScore,
+} from "@/spages/api/activity";
 
 export default {
   components: {
@@ -110,122 +122,40 @@ export default {
       showPhoneAuth: false,
       showIntroPopup: false,
       activityId: "",
-      activity: {
-        id: 1,
-        title: "中山一社区居民瓜子会",
-        location: "越秀区富力新天地中心",
-        startTime: "2026-07-01 16:02:00",
-        endTime: "2026-07-02 23:02:00",
-        // isExpired: false,
-        collectPhone: true,
-        infoTitle: "中山一社区居民瓜子会",
-        signedUp: false,
-        description:
-          "欢迎大家携家带口来中山一社区参加线下居民嗑瓜子闲聊交友会！现场我们提供多口味爱心瓜子与茶水。在这里，您可以和邻居唠唠家常，分享日常生活趣事，增进邻里感情。我们还邀请了社区音乐达人现场弹唱，氛围轻松自在。欢迎广大志愿者与居民报名！",
-      },
-
-      joinedNeighbors: [
-        {
-          name: "石头",
-          avatar: "https://cdn.uviewui.com/uview/album/1.jpg",
-          joinTime: "刚刚加入",
-        },
-        {
-          name: "秉治",
-          avatar: "https://cdn.uviewui.com/uview/album/2.jpg",
-          joinTime: "5分钟前加入",
-        },
-        {
-          name: "陈阿姨",
-          avatar: "https://cdn.uviewui.com/uview/album/3.jpg",
-          joinTime: "18分钟前加入",
-        },
-        {
-          name: "时光山哥",
-          avatar: "https://cdn.uviewui.com/uview/album/4.jpg",
-          joinTime: "32分钟前加入",
-        },
-        {
-          name: "小林",
-          avatar: "https://cdn.uviewui.com/uview/album/5.jpg",
-          joinTime: "1小时前加入",
-        },
-        {
-          name: "王姐",
-          avatar: "https://cdn.uviewui.com/uview/album/6.jpg",
-          joinTime: "2小时前加入",
-        },
-      ],
-
-      reviews: [
-        {
-          name: "秉治",
-          avatar: "https://cdn.uviewui.com/uview/album/1.jpg",
-          time: "1小时前",
-          emoji: "😆",
-          statusText: "远超预期",
-          content: "满意！感谢志愿者",
-        },
-        {
-          name: "石头",
-          avatar: "https://cdn.uviewui.com/uview/album/2.jpg",
-          time: "2小时前",
-          emoji: "👏",
-          statusText: "特别好",
-          content: "很热心，点赞！",
-        },
-        {
-          name: "陈阿姨",
-          avatar: "https://cdn.uviewui.com/uview/album/3.jpg",
-          time: "1天前",
-          emoji: "😆",
-          statusText: "热心细致",
-          content: "小伙子非常周到，很满意！",
-        },
-      ],
-
-      photoList: [
-        {
-          id: 201,
-          image: "https://cdn.uviewui.com/uview/album/8.jpg",
-          author: "秉治",
-          time: "1小时前",
-          likes: 1,
-          isLiked: false,
-          comments: [],
-        },
-        {
-          id: 202,
-          image: "https://cdn.uviewui.com/uview/album/6.jpg",
-          author: "时光山哥",
-          time: "1小时前",
-          likes: 2,
-          isLiked: false,
-          comments: [],
-        },
-      ],
+      activity: {},
+      joinedNeighbors: [],
+      reviews: [],
+      reviewTotal: 0,
+      photoList: [],
+      avgScore: 0,
     };
   },
   computed: {
     isExpired() {
-      if (this.activity.isExpired) return true;
+      if (!this.activity.endTime) return false;
       const end = new Date(this.activity.endTime).getTime();
       if (isNaN(end)) return false;
       return Date.now() > end;
     },
     isStarted() {
+      if (!this.activity.startTime) return false;
       const start = new Date(this.activity.startTime).getTime();
       if (isNaN(start)) return false;
       return Date.now() >= start;
     },
     canSignup() {
-      // 已报名则不需要再报名
       if (this.activity.signedUp) return false;
-      return this.isStarted && !this.isExpired;
+      if (!this.isStarted || this.isExpired) return false;
+      // 人数已满
+      if (
+        this.activity.maxLimit > 0 &&
+        this.activity.participantCount >= this.activity.maxLimit
+      )
+        return false;
+      return true;
     },
     countdownTime() {
       const now = Date.now();
-      // 活动已结束或已报名，不需要倒计时
       if (this.isExpired || this.activity.signedUp) return 0;
       const target = this.isStarted
         ? new Date(this.activity.endTime).getTime()
@@ -240,8 +170,13 @@ export default {
     signupButtonText() {
       if (this.isExpired) return "已结束";
       if (this.activity.signedUp) return "已报名";
-      if (this.isStarted) return "立即报名";
-      return "未开始";
+      if (!this.isStarted) return "未开始";
+      if (
+        this.activity.maxLimit > 0 &&
+        this.activity.participantCount >= this.activity.maxLimit
+      )
+        return "已满员";
+      return "立即报名";
     },
     activityTimeText() {
       const fmt = (str) => {
@@ -257,41 +192,162 @@ export default {
     },
   },
   onLoad(options) {
-    if (options && options.photoId) {
-      const pIdx = this.photoList.findIndex((p) => p.id == options.photoId);
-      if (pIdx !== -1) {
-        this.selectedPhotoIndex = pIdx;
-        this.showPhotoViewer = true;
-      }
-    }
-
-    if (this.activity.collectPhone) {
-      const cacheProfile = uni.getStorageSync("user_profile_data");
-      if (!cacheProfile) {
-        this.showProfileEdit = true;
-      } else {
-        const cachedPhone = uni.getStorageSync("user_phone_number");
-        if (!cachedPhone) {
-          this.showPhoneAuth = true;
-        }
-      }
-    }
     this.activityId = options.id ? options.id : "";
     this.getList();
   },
+  onShow() {
+    // 从写评价页返回时刷新评价列表；报名/照片通过 getList 已处理
+    if (this.activityId) {
+      this.refreshReviews();
+    }
+  },
   methods: {
-    getList() {
-      // 获取详情接口 this.activityId
+    // 仅刷新照片列表
+    async refreshPhotos() {
+      try {
+        const photosRes = await photos(this.activityId);
+        const photoArr = Array.isArray(photosRes.data) ? photosRes.data : [];
+        this.photoList = photoArr.map((p) => ({
+          id: p.photoId || p.id,
+          image: p.imageUrl || "",
+          author: p.nickName || "",
+          time: this.formatJoinTime(p.createTime),
+          likes: p.likes || 0,
+          isLiked: p.isLiked || false,
+          comments: [],
+        }));
+      } catch (e) {
+        // ignore
+      }
     },
+    // 仅刷新评价列表
+    async refreshReviews() {
+      try {
+        const commentsRes = await comments(this.activityId, { pageNumber: 1, pageSize: 2 });
+        const commentsData = commentsRes.data || {};
+        const reviewList = commentsData.content || [];
+        this.reviews = reviewList.map((item) => ({
+          name: item.nickName || "",
+          avatar: item.avatar || "",
+          time: this.formatJoinTime(item.createTime),
+          emoji: item.emoji || "😊",
+          statusText: item.statusText || "",
+          content: item.content || "",
+          score: item.score || 5,
+        }));
+        this.reviewTotal = commentsData.totalElements || 0;
+      } catch (e) {
+        // ignore
+      }
+    },
+    async getList() {
+      try {
+        // 并行请求详情、邻居列表、照片列表、前两条评价、评分
+        const [detailRes, joinedRes, photosRes, commentsRes, scoreRes] =
+          await Promise.all([
+            detail5(this.activityId),
+            joined(this.activityId),
+            photos(this.activityId),
+            comments(this.activityId, { pageNumber: 1, pageSize: 2 }),
+            averageScore(this.activityId).catch(() => ({ data: 0 })),
+          ]);
+
+        // 填充活动详情
+        const d = detailRes.data || {};
+        this.activity = {
+          ...d,
+          id: d.activityId || d.id,
+          signedUp: d.signedUp || false,
+          participantCount: d.participantCount || 0,
+          infoTitle: d.title,
+          description: d.content,
+        };
+
+        // 填充已加入邻居
+        const joinedList = Array.isArray(joinedRes.data) ? joinedRes.data : [];
+        this.joinedNeighbors = joinedList.map((item) => ({
+          name: item.nickName || "",
+          avatar: item.avatar || "",
+          joinTime: this.formatJoinTime(item.joinTime || item.createTime),
+        }));
+
+        // 填充照片列表
+        const photoArr = Array.isArray(photosRes.data) ? photosRes.data : [];
+        this.photoList = photoArr.map((p) => ({
+          id: p.photoId || p.id,
+          image: p.imageUrl || "",
+          author: p.nickName || "",
+          time: this.formatJoinTime(p.createTime),
+          likes: p.likes || 0,
+          isLiked: p.isLiked || false,
+          comments: [],
+        }));
+
+        // 填充评价列表（前2条）
+        const commentsData = commentsRes.data || {};
+        const reviewList = commentsData.content || [];
+        this.reviews = reviewList.map((item) => ({
+          name: item.nickName || "",
+          avatar: item.avatar || "",
+          time: this.formatJoinTime(item.createTime),
+          emoji: item.emoji || "😊",
+          statusText: item.statusText || "",
+          content: item.content || "",
+          score: item.score || 5,
+        }));
+        this.reviewTotal = commentsData.totalElements || 0;
+
+        // 评分
+        this.avgScore = scoreRes.data || 0;
+      } catch (e) {
+        uni.showToast({ title: "加载失败，请重试", icon: "none" });
+      }
+    },
+
+    // 简单时间格式化 "X分钟前" / "X小时前" 等
+    formatJoinTime(timeStr) {
+      if (!timeStr) return "";
+      const d = new Date(timeStr.replace(/-/g, "/"));
+      if (isNaN(d.getTime())) return timeStr;
+      const diff = Date.now() - d.getTime();
+      const minutes = Math.floor(diff / 60000);
+      if (minutes < 1) return "刚刚加入";
+      if (minutes < 60) return `${minutes}分钟前加入`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}小时前加入`;
+      const days = Math.floor(hours / 24);
+      return `${days}天前加入`;
+    },
+
     handlePhotoListUpdate(updatedList) {
       this.photoList = updatedList;
     },
     handleCountdownFinish() {},
-    handleSignup() {
+    async handleSignup() {
       if (!this.canSignup) return;
-      // 模拟调后端接口报名成功，后端返回后置为 true
-      uni.showToast({ title: "报名成功", icon: "none" });
-      this.activity.signedUp = true;
+      try {
+        await signup(this.activityId);
+        uni.showToast({ title: "报名成功", icon: "none" });
+        // 报名成功后刷新详情和邻居列表
+        const [detailRes, joinedRes] = await Promise.all([
+          detail5(this.activityId),
+          joined(this.activityId),
+        ]);
+        const d = detailRes.data || {};
+        this.activity = {
+          ...this.activity,
+          signedUp: d.signedUp || true,
+          participantCount: d.participantCount || (this.activity.participantCount || 0) + 1,
+        };
+        const joinedList = Array.isArray(joinedRes.data) ? joinedRes.data : [];
+        this.joinedNeighbors = joinedList.map((item) => ({
+          name: item.nickName || "",
+          avatar: item.avatar || "",
+          joinTime: this.formatJoinTime(item.joinTime || item.createTime),
+        }));
+      } catch (e) {
+        uni.showToast({ title: "报名失败，请重试", icon: "none" });
+      }
     },
     onProfileConfirm(data) {
       uni.setStorageSync("user_profile_data", data);
@@ -307,11 +363,15 @@ export default {
     },
     handleDraftPrompt() {
       uni.navigateTo({
-        url: `/spages/activity/writeComment?id=${this.activityId}&name=${this.activity.title}`,
+        url: `/spages/activity/writeComment?id=${
+          this.activityId
+        }&name=${encodeURIComponent(this.activity.title || "")}`,
       });
     },
     goToAllReviews() {
-      uni.navigateTo({ url: "/spages/activity/comments" });
+      uni.navigateTo({
+        url: `/spages/activity/comments?id=${this.activityId}`,
+      });
     },
     onShareAppMessage(res) {
       if (res.from === "button" && res.target && res.target.dataset.photoid) {
@@ -326,7 +386,7 @@ export default {
       return {
         title: `向你推荐社区活动：${this.activity.title}`,
         path: `/spages/activity/detail?id=${this.activity.id}`,
-        imageUrl: "https://cdn.uviewui.com/uview/album/3.jpg",
+        imageUrl: this.activity.coverImage || "",
       };
     },
   },

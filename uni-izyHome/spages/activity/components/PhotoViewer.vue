@@ -61,11 +61,12 @@
       <!-- 用户信息与右侧工具栏 -->
       <view class="author-tool-bar">
         <view class="author-info">
-          <image
+          <u-avatar
             class="avatar"
-            :src="currentPhoto.avatar || defaultAvatar"
+            :src="currentPhoto.avatar"
             mode="aspectFill"
-          ></image>
+            size="84rpx"
+          ></u-avatar>
           <view class="name-time">
             <text class="name">{{ currentPhoto.author }}</text>
             <text class="time">{{ currentPhoto.time }}</text>
@@ -169,7 +170,11 @@
         </scroll-view>
 
         <view class="input-bar">
-          <image class="my-avatar" :src="myAvatar" mode="aspectFill"></image>
+          <u-avatar
+            class="my-avatar"
+            :src="myAvatar"
+            mode="aspectFill"
+          ></u-avatar>
           <input
             type="text"
             v-model="commentText"
@@ -185,6 +190,11 @@
 </template>
 
 <script>
+import { toggleLike } from "@/spages/api/activity";
+function getProfile() {
+  let user_profile_data = uni.getStorageSync("user_profile_data") || null;
+  return user_profile_data ? user_profile_data : {};
+}
 export default {
   props: {
     show: { type: Boolean, default: false },
@@ -197,8 +207,7 @@ export default {
       activeIndex: 0,
       showComments: false,
       commentText: "",
-      myAvatar: "https://cdn.uviewui.com/uview/album/1.jpg",
-      defaultAvatar: "https://cdn.uviewui.com/uview/album/2.jpg",
+      myAvatar: getProfile().avatarUrl,
       barrages: [], // 活跃弹幕
       localList: [], // 【沙箱机制】：存放经过“同作者过滤”后的照片子集
     };
@@ -241,7 +250,16 @@ export default {
   },
   methods: {
     handleClose() {
+      // 关闭时将点赞状态同步回父级 photoList
+      this.list.forEach((p) => {
+        const local = this.localList.find((l) => l.id === p.id);
+        if (local) {
+          p.isLiked = local.isLiked;
+          p.likes = local.likes;
+        }
+      });
       this.$emit("update:show", false);
+      this.$emit("update-list", [...this.list]);
     },
     onSwiperChange(e) {
       this.activeIndex = e.detail.current;
@@ -249,32 +267,33 @@ export default {
       this.triggerDefaultBarrages();
     },
 
-    // 点赞与取消点赞（同步修改 localList 和父组件引用，保证心形瞬间变红）
-    toggleLike() {
+    // 点赞与取消点赞
+    async toggleLike() {
       const currentLocalPhoto = this.localList[this.activeIndex];
-
-      // 1. 寻找父组件原始列表中的对应对象，进行状态更改以保持数据同步
       const parentPhoto = this.list.find((p) => p.id === currentLocalPhoto.id);
 
-      if (parentPhoto) {
-        const nextLiked = !parentPhoto.isLiked;
+      try {
+        await toggleLike(currentLocalPhoto.id);
+        // 接口成功后更新 UI
+        const nextLiked = !currentLocalPhoto.isLiked;
         const nextLikes = nextLiked
-          ? parentPhoto.likes + 1
-          : parentPhoto.likes - 1;
+          ? currentLocalPhoto.likes + 1
+          : Math.max(currentLocalPhoto.likes - 1, 0);
 
-        // 同步父页面引用的数据
-        this.$set(parentPhoto, "isLiked", nextLiked);
-        this.$set(parentPhoto, "likes", nextLikes);
-
-        // 同步当前大图查看器的 UI 数据
+        if (parentPhoto) {
+          this.$set(parentPhoto, "isLiked", nextLiked);
+          this.$set(parentPhoto, "likes", nextLikes);
+        }
         this.$set(currentLocalPhoto, "isLiked", nextLiked);
         this.$set(currentLocalPhoto, "likes", nextLikes);
-      }
 
-      uni.showToast({
-        title: currentLocalPhoto.isLiked ? "点赞成功" : "已取消点赞",
-        icon: "none",
-      });
+        uni.showToast({
+          title: nextLiked ? "点赞成功" : "已取消点赞",
+          icon: "none",
+        });
+      } catch (e) {
+        uni.showToast({ title: "操作失败", icon: "none" });
+      }
     },
 
     // 真实保存至微信相册
@@ -339,7 +358,7 @@ export default {
       comments.forEach((c, index) => {
         setTimeout(() => {
           if (this.show) {
-            this.addBarrage(c.text, c.avatar || this.defaultAvatar);
+            this.addBarrage(c.text, c.avatar);
           }
         }, index * 1200);
       });
@@ -350,7 +369,7 @@ export default {
       const parentPhoto = this.list.find((p) => p.id === currentLocalPhoto.id);
 
       const newComment = {
-        user: "石头",
+        user: getProfile().nickname,
         text: text,
         avatar: this.myAvatar,
         time: "刚刚",

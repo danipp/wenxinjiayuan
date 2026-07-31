@@ -10,7 +10,7 @@
     </view>
 
     <!-- 进行中才有已加入的邻居 -->
-    <view v-if="isStarted" class="joined-neighbor-card">
+    <view v-if="isStarted && neighbors.length" class="joined-neighbor-card">
       <view class="section-header">
         <text class="section-title">已加入的邻居</text>
         <text class="joined-count">{{ neighbors.length }}人已加入</text>
@@ -34,11 +34,12 @@
             class="neighbor-row"
           >
             <view class="neighbor-left">
-              <image
+              <u-avatar
                 class="neighbor-avatar"
                 :src="neighbor.avatar"
+                size="64rpx"
                 mode="aspectFill"
-              ></image>
+              ></u-avatar>
               <text class="neighbor-name">{{ neighbor.name }}</text>
             </view>
             <text class="join-time">{{ neighbor.joinTime }}</text>
@@ -160,6 +161,7 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    margin-left: 20rpx;
   }
 
   .join-time {

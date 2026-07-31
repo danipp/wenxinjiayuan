@@ -6,7 +6,7 @@
         <text class="page-subtitle">共{{ total }}条活动评价</text>
       </view>
       <view class="score-pill">
-        <text class="score-num">4.9</text>
+        <text class="score-num">{{ avgScore.toFixed(1) }}</text>
         <text class="score-label">综合评分</text>
       </view>
     </view>
@@ -64,114 +64,21 @@
 </template>
 
 <script>
+import { comments, averageScore } from "@/spages/api/activity";
+
 export default {
   data() {
     return {
       activityId: "",
       page: 1,
-      pageSize: 6,
-      loading: true,
+      pageSize: 10,
+      loading: false,
       finished: false,
       isRefreshing: false,
       commentsList: [],
-      mockComments: [
-        {
-          id: 1,
-          name: "秉治",
-          avatar: "https://cdn.uviewui.com/uview/album/1.jpg",
-          time: "1小时前",
-          emoji: "😆",
-          statusText: "远超预期",
-          score: 5,
-          content: "活动组织得很好，现场氛围很轻松，邻居们都聊得很开心。",
-        },
-        {
-          id: 2,
-          name: "石头",
-          avatar: "https://cdn.uviewui.com/uview/album/2.jpg",
-          time: "2小时前",
-          emoji: "👏",
-          statusText: "特别好",
-          score: 5,
-          content: "工作人员很热心，指引清楚，活动体验非常好。",
-        },
-        {
-          id: 3,
-          name: "陈阿姨",
-          avatar: "https://cdn.uviewui.com/uview/album/3.jpg",
-          time: "1天前",
-          emoji: "😆",
-          statusText: "热心细致",
-          score: 5,
-          content: "很久没有参加这么温暖的社区活动了，认识了不少邻居。",
-        },
-        {
-          id: 4,
-          name: "时光山哥",
-          avatar: "https://cdn.uviewui.com/uview/album/4.jpg",
-          time: "1天前",
-          emoji: "😊",
-          statusText: "满意",
-          score: 4,
-          content: "活动内容挺丰富的，如果下次时间再长一点就更好了。",
-        },
-        {
-          id: 5,
-          name: "小林",
-          avatar: "https://cdn.uviewui.com/uview/album/5.jpg",
-          time: "2天前",
-          emoji: "🌿",
-          statusText: "轻松自在",
-          score: 5,
-          content: "现场茶水和小点心准备得很贴心，聊天也没有压力。",
-        },
-        {
-          id: 6,
-          name: "王姐",
-          avatar: "https://cdn.uviewui.com/uview/album/6.jpg",
-          time: "2天前",
-          emoji: "👍",
-          statusText: "值得参加",
-          score: 4,
-          content: "整体不错，适合带家人一起参加，希望后面多办一些。",
-        },
-        {
-          id: 7,
-          name: "阿明",
-          avatar: "https://cdn.uviewui.com/uview/album/7.jpg",
-          time: "3天前",
-          emoji: "😄",
-          statusText: "气氛很好",
-          score: 5,
-          content: "邻里互动很多，也有志愿者帮忙维持秩序，很不错。",
-        },
-        {
-          id: 8,
-          name: "林姨",
-          avatar: "https://cdn.uviewui.com/uview/album/8.jpg",
-          time: "3天前",
-          emoji: "😊",
-          statusText: "满意",
-          score: 4,
-          content: "活动地点比较好找，工作人员提前提醒也很及时。",
-        },
-        {
-          id: 9,
-          name: "小周",
-          avatar: "https://cdn.uviewui.com/uview/album/9.jpg",
-          time: "4天前",
-          emoji: "💚",
-          statusText: "很暖心",
-          score: 5,
-          content: "这种社区活动很有意义，让大家更熟悉身边的邻居。",
-        },
-      ],
+      total: 0,
+      avgScore: 0,
     };
-  },
-  computed: {
-    total() {
-      return this.mockComments.length;
-    },
   },
   onLoad(options) {
     this.activityId = options && options.id ? options.id : "";
@@ -179,11 +86,21 @@ export default {
       title: "活动评价",
     });
     this.getList();
+    this.fetchScore();
   },
   methods: {
     getStars(score) {
       const count = score || 5;
       return "⭐️".repeat(count);
+    },
+    // 获取评分
+    async fetchScore() {
+      try {
+        const res = await averageScore(this.activityId);
+        this.avgScore = res.data || 0;
+      } catch (e) {
+        // ignore
+      }
     },
     onRefresh() {
       this.isRefreshing = true;
@@ -192,28 +109,57 @@ export default {
       this.commentsList = [];
       this.getList(true);
     },
-    getList(isRefresh = false) {
-      // 模拟接口请求，可替换为实际接口：activityId、page、pageSize
+    async getList(isRefresh = false) {
+      if (this.loading || (this.finished && !isRefresh)) return;
       this.loading = true;
-      setTimeout(() => {
-        const start = (this.page - 1) * this.pageSize;
-        const nextList = this.mockComments.slice(start, start + this.pageSize);
+      try {
+        const res = await comments(this.activityId, {
+          pageNumber: this.page,
+          pageSize: this.pageSize,
+        });
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast = pageData.last !== undefined ? pageData.last : list.length < this.pageSize;
+        this.total = pageData.totalElements || 0;
+
+        const mappedList = list.map((item) => ({
+          id: item.commentId || item.id,
+          name: item.nickName || "",
+          avatar: item.avatar || "",
+          time: this.formatTime(item.createTime),
+          emoji: item.emoji || "😊",
+          statusText: item.statusText || "",
+          score: item.score || 5,
+          content: item.content || "",
+        }));
 
         if (this.page === 1) {
-          this.commentsList = nextList;
+          this.commentsList = mappedList;
         } else {
-          this.commentsList = this.commentsList.concat(nextList);
+          this.commentsList = [...this.commentsList, ...mappedList];
         }
 
-        this.page += 1;
+        this.finished = isLast;
+        if (!isLast) this.page++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
         this.loading = false;
-        this.finished = this.commentsList.length >= this.mockComments.length;
-
-        if (isRefresh) {
-          this.isRefreshing = false;
-          uni.showToast({ title: "刷新成功", icon: "none" });
-        }
-      }, 1500);
+        if (isRefresh) this.isRefreshing = false;
+      }
+    },
+    formatTime(timeStr) {
+      if (!timeStr) return "";
+      const d = new Date(timeStr.replace(/-/g, "/"));
+      if (isNaN(d.getTime())) return timeStr;
+      const diff = Date.now() - d.getTime();
+      const minutes = Math.floor(diff / 60000);
+      if (minutes < 1) return "刚刚";
+      if (minutes < 60) return `${minutes}分钟前`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}小时前`;
+      const days = Math.floor(hours / 24);
+      return `${days}天前`;
     },
     loadMore() {
       if (this.loading || this.finished) return;

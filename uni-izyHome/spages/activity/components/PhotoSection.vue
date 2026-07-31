@@ -35,7 +35,8 @@
 </template>
 
 <script>
-import ossUpload from "@/utils/upload"; // 引入您的oss上传逻辑
+import ossUpload from "@/utils/upload";
+import { uploadPhoto } from "@/spages/api/activity";
 
 export default {
   mixins: [ossUpload],
@@ -48,14 +49,25 @@ export default {
   },
   methods: {
     async sendPhoto() {
-      const results = await this.chooseAndUploadImage(
-        { count: 1 },
-        () => {},
-        true,
-        "activityPhoto"
-      );
-      // 活动id idx 调接口之后 this.$emit("refresh")通知更新详情接口
-      console.log(results, "123");
+      try {
+        const results = await this.chooseAndUploadImage(
+          { count: 1 },
+          () => {},
+          true,
+          "activityPhoto"
+        );
+        if (results && results.length > 0) {
+          const imgUrl = results[0].url;
+          await uploadPhoto({
+            activityId: Number(this.idx),
+            imageUrl: imgUrl,
+          });
+          uni.showToast({ title: "上传成功", icon: "success" });
+          this.$emit("refresh");
+        }
+      } catch (e) {
+        uni.showToast({ title: "上传失败，请重试", icon: "none" });
+      }
     },
   },
 };

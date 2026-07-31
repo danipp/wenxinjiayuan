@@ -2,7 +2,7 @@
   <view class="review-section-card">
     <view class="section-header">
       <text class="section-title"
-        >活动评价<text class="count">({{ reviews.length }}条)</text></text
+        >活动评价<text class="count">({{ reviewTotal }}条)</text></text
       >
       <view class="btn-green-border" @click="$emit('write')">
         <u-icon name="edit-pen" color="#07c160" size="14"></u-icon>
@@ -16,7 +16,12 @@
         :key="idx"
         class="review-item-row"
       >
-        <image class="avatar" :src="item.avatar" mode="aspectFill"></image>
+        <u-avatar
+          class="avatar"
+          :src="item.avatar"
+          size="72rpx"
+          mode="aspectFill"
+        ></u-avatar>
         <view class="review-right">
           <view class="name-time-row">
             <text class="name">{{ item.name }}</text>
@@ -47,6 +52,7 @@
 export default {
   props: {
     reviews: { type: Array, default: () => [] },
+    reviewTotal: { type: Number, default: 0 },
   },
 };
 </script>

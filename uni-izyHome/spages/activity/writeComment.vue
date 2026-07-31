@@ -56,60 +56,75 @@
 </template>
 
 <script>
+import { comment } from "@/spages/api/activity";
+
 export default {
   data() {
     return {
-      activityId: "", // 活动ID
-      communityName: "", // 活动/社区名称（默认兜底）
-      rating: 0, // 选中的星级 (0-5)
-      content: "", // 录入的评价正文
+      activityId: "",
+      communityName: "",
+      rating: -1,
+      content: "",
+      // emoji 和 statusText 根据评分自动映射
+      emojiMap: {
+        1: "😞",
+        2: "😕",
+        3: "😊",
+        4: "😄",
+        5: "😆",
+      },
+      statusMap: {
+        1: "不满意",
+        2: "一般",
+        3: "还不错",
+        4: "挺好的",
+        5: "特别棒",
+      },
     };
   },
   computed: {
-    // 只有当打过星且写了评价，提交按钮才激活高亮
     isFormValid() {
-      return this.rating > 0 && this.content.trim().length > 0;
+      return this.rating >= 0 && this.content.trim().length > 0;
     },
   },
   onLoad(options) {
-    // 接收从详情页传进来的社区名称和 ID
     if (options) {
       if (options.id) this.activityId = options.id;
       if (options.name) {
         this.communityName = decodeURIComponent(options.name);
       }
     }
-
     uni.setNavigationBarTitle({
       title: "活动评价",
     });
   },
   methods: {
-    // 设置打分
     setRating(val) {
-      this.rating = val;
+      this.rating = val + 1;
     },
-    // 提交数据
-    handleSubmit() {
+    async handleSubmit() {
       if (!this.isFormValid) {
         uni.showToast({ title: "请先打分并填写评价内容", icon: "none" });
         return;
       }
-
       uni.showLoading({ title: "提交评价中..." });
-
-      setTimeout(() => {
-        uni.hideLoading();
-        uni.showToast({
-          title: "评价成功，感谢您的反馈！",
-          icon: "success",
+      try {
+        await comment({
+          activityId: Number(this.activityId),
+          score: this.rating,
+          emoji: this.emojiMap[this.rating] || "😊",
+          statusText: this.statusMap[this.rating] || "",
+          content: this.content,
         });
-
-        // 成功后延迟返回上一页
+        uni.hideLoading();
+        uni.showToast({ title: "评价成功，感谢您的反馈！", icon: "success" });
         setTimeout(() => {
           uni.navigateBack();
         }, 1200);
-      }, 1000);
+      } catch (e) {
+        uni.hideLoading();
+        uni.showToast({ title: e.msg, icon: "none" });
+      }
     },
   },
 };
