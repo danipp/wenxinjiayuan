@@ -49,24 +49,16 @@
 </template>
 
 <script>
+import { list2 as getContactList, delete1 as deleteContactApi } from '../../api/contact';
+
 export default {
   data() {
     return {
-      contactsList: [
-        {
-          id: 1,
-          name: "陈阿姨",
-          phone: "13800138000",
-          relation: "母亲",
-        },
-        {
-          id: 2,
-          name: "李先生",
-          phone: "13900139000",
-          relation: "邻居",
-        },
-      ],
+      contactsList: [],
     };
+  },
+  onShow() {
+    this.getList();
   },
   onLoad() {
     uni.setNavigationBarTitle({
@@ -74,6 +66,19 @@ export default {
     });
   },
   methods: {
+    async getList() {
+      try {
+        const res = await getContactList();
+        if (res.code === '00000') {
+          this.contactsList = (res.data || []).map(item => ({
+            ...item,
+            id: item.contactId || item.id
+          }));
+        }
+      } catch (error) {
+        console.error("获取联系人列表失败", error);
+      }
+    },
     goAddContact() {
       uni.navigateTo({
         url: "/spages/mine/emergencyContacts/add",
@@ -89,12 +94,19 @@ export default {
         title: "删除联系人",
         content: `确定删除${item.name}吗？`,
         confirmText: "删除",
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            this.contactsList = this.contactsList.filter(
-              (contact) => contact.id !== item.id
-            );
-            uni.showToast({ title: "删除成功", icon: "none" });
+            try {
+              const resDel = await deleteContactApi(item.id);
+              if (resDel.code === '00000') {
+                uni.showToast({ title: "删除成功", icon: "success" });
+                this.getList();
+              } else {
+                uni.showToast({ title: resDel.msg || "删除失败", icon: "none" });
+              }
+            } catch (error) {
+              console.error("删除联系人失败", error);
+            }
           }
         },
       });

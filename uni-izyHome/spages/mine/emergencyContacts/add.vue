@@ -73,6 +73,8 @@
 </template>
 
 <script>
+import { save2 as saveContactApi } from '../../api/contact';
+
 export default {
   data() {
     return {
@@ -121,7 +123,7 @@ export default {
     selectRelation(item) {
       this.form.relation = item;
     },
-    handleSubmit() {
+    async handleSubmit() {
       if (!this.form.name.trim()) {
         uni.showToast({ title: "请输入联系人姓名", icon: "none" });
         return;
@@ -135,10 +137,24 @@ export default {
         return;
       }
 
-      uni.showToast({ title: "保存成功", icon: "success" });
-      setTimeout(() => {
-        uni.navigateBack();
-      }, 800);
+      try {
+        const payload = { ...this.form };
+        if (this.contactId) {
+          payload.contactId = this.contactId;
+        }
+
+        const res = await saveContactApi(payload);
+        if (res.code === '00000') {
+          uni.showToast({ title: "保存成功", icon: "success" });
+          setTimeout(() => {
+            uni.navigateBack();
+          }, 800);
+        } else {
+          uni.showToast({ title: res.msg || "保存失败", icon: "none" });
+        }
+      } catch (error) {
+        console.error("保存联系人失败", error);
+      }
     },
   },
 };
