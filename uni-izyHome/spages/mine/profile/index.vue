@@ -104,7 +104,6 @@ export default {
     // A. 头像微信原生态直改
     handleChooseAvatar(e) {
       this.onChooseAvatar(e);
-      this.updateProfile();
     },
     // B. 非微信平台头像选择回调
     handleCustomAvatarClick() {
