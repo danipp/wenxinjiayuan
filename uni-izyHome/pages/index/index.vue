@@ -204,6 +204,7 @@ import CommunitySelector from "@/components/community.vue";
 import NfcCheckinSuccess from "./components/NfcCheckinSuccess.vue";
 import PhoneAuthPopup from "@/components/PhoneAuthPopup.vue";
 import RecruitmentList from "./components/RecruitmentList.vue";
+import loginApi from "@/utils/login.js";
 export default {
   components: {
     CommunitySelector,
@@ -307,7 +308,9 @@ export default {
       this.nfcCheckinParams = this.formatNfcCheckinParams(options);
       this.showNfcCheckinSuccess = true;
     }
-    this.loadAd();
+    loginApi().then((res) => {
+      this.loadAd();
+    });
   },
   onShow() {
     // 首次载入时，如果本地缓存存在已有社区，则进行渲染

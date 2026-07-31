@@ -6,8 +6,7 @@ import { getToken, removeToken } from './auth'
 import store from '../store'
 switch (envVersion) {
   case "develop": // 开发版
-    // API_URL = 'http://192.168.31.224:9080'
-    API_URL = "http://192.168.0.143:8080";
+    API_URL = "http://192.168.0.143:8091/warm-home";
     // API_URL = "https://hz.gaojiaomedia.cn/gong-cheng"; 
     break;
   case "trial": // 体验版

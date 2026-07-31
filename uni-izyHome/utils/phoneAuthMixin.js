@@ -2,6 +2,7 @@
  * phoneAuthMixin.js
  * 专用于微信小程序一键获取并安全存储手机号的公共逻辑混入
  */
+import { loginByAuth } from "@/api/login"
 export default {
     data() {
         return {
@@ -47,23 +48,9 @@ export default {
         // 3. 模拟向您的后端发送 code 换取真实手机号
         decryptPhoneNumber(code) {
             uni.showLoading({ title: '安全解密中...' });
-
-            setTimeout(() => {
+            loginByAuth({ decodeTelCode: code }).then(res => {
                 uni.hideLoading();
-
-                // 实际开发中，这里需要发起 uni.request 请求您的后端解密接口：
-                // const res = await requestDecryptPhone({ code });
-
-                // 以下为模拟解密成功返回的手机号
-                const mockDecryptedPhone = '13800138000';
-
-                // 格式化展示用 (如 138****8000)
-                const formattedPhone = mockDecryptedPhone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
-
-                this.phoneNumber = formattedPhone;
-
-                // 写入本地持久化缓存
-                uni.setStorageSync('user_phone_number', formattedPhone);
+                uni.setStorageSync('user_phone_number', res.data);
 
                 uni.showToast({
                     title: '授权成功',
@@ -71,9 +58,11 @@ export default {
                 });
 
                 // 派发成功事件给父组件
-                this.$emit('auth-success', formattedPhone);
+                this.$emit('auth-success', res.data);
                 this.$emit('update:show', false);
-            }, 800);
+            }).catch(err => {
+                uni.hideLoading();
+            })
         },
 
         // 4. 清除本地授权缓存（备用方法）
