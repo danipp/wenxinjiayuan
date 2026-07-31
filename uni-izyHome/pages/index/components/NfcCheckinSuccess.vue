@@ -20,12 +20,12 @@
       <view class="frame-info">
         <view class="info-row">
           <text class="label">相框编号</text>
-          <text class="value">{{ checkinParams.frameId || "--" }}</text>
+          <text class="value">{{ checkinParams.frameNo || "--" }}</text>
         </view>
         <view class="info-row">
           <text class="label">打卡位置</text>
           <text class="value">{{
-            checkinParams.locationName || "社区打卡点"
+            checkinParams.location || "社区打卡点"
           }}</text>
         </view>
       </view>

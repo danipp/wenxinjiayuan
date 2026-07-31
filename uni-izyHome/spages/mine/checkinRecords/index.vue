@@ -71,46 +71,30 @@
 </template>
 
 <script>
+import { count as getCheckinCount, page4 as getCheckinPage } from '../../api/checkin';
+
 export default {
   data() {
     return {
       page: 1,
-      pageSize: 6,
-      loading: true,
+      pageSize: 20,
+      loading: false,
       finished: false,
       isRefreshing: false,
       recordsList: [],
-      mockRecords: [
-        {
-          id: 1,
-          frameNo: "FRAME-202607-001",
-          frameName: "社区活动室打卡相框",
-          frameImage: "/static/frames/frame1.png",
-          location: "财厅前社区 | 社区活动室",
-          checkinTime: "2026-07-07 09:18",
-          statusText: "打卡成功",
-        },
-        {
-          id: 2,
-          frameNo: "FRAME-202607-002",
-          frameName: "邻里服务站打卡相框",
-          frameImage: "/static/frames/frame2.png",
-          location: "财厅前社区 | 邻里服务站",
-          checkinTime: "2026-07-06 17:42",
-          statusText: "打卡成功",
-        },
-      ],
+      totalCount: 0,
     };
   },
   computed: {
     total() {
-      return this.mockRecords.length;
+      return this.totalCount;
     },
   },
   onLoad() {
     uni.setNavigationBarTitle({
       title: "打卡记录",
     });
+    this.fetchCount();
     this.getList();
   },
   methods: {
@@ -121,27 +105,57 @@ export default {
       this.recordsList = [];
       this.getList(true);
     },
-    getList(isRefresh = false) {
-      this.loading = true;
-      setTimeout(() => {
-        const start = (this.page - 1) * this.pageSize;
-        const nextList = this.mockRecords.slice(start, start + this.pageSize);
-
-        if (this.page === 1) {
-          this.recordsList = nextList;
-        } else {
-          this.recordsList = this.recordsList.concat(nextList);
+    async fetchCount() {
+      try {
+        const res = await getCheckinCount();
+        if (res.code === '00000') {
+          this.totalCount = res.data || 0;
         }
+      } catch (error) {
+        console.error("Failed to fetch count", error);
+      }
+    },
+    async getList(isRefresh = false) {
+      this.loading = true;
 
-        this.page += 1;
+      try {
+        const res = await getCheckinPage({
+          pageNumber: this.page,
+          pageSize: this.pageSize
+        });
+
+        if (res.code === '00000') {
+          const listData = res.data?.content || [];
+          const formattedList = listData.map(item => ({
+            id: item.id || item.recordId,
+            frameNo: item.frameNo,
+            frameName: item.frameName,
+            frameImage: item.frameImage,
+            location: item.location,
+            checkinTime: item.checkinTime,
+            statusText: item.status === 1 ? "打卡成功" : "打卡失败"
+          }));
+
+          if (this.page === 1) {
+            this.recordsList = formattedList;
+          } else {
+            this.recordsList = this.recordsList.concat(formattedList);
+          }
+
+          this.finished = res.data?.last ?? (formattedList.length < this.pageSize);
+          this.page += 1;
+        } else {
+          uni.showToast({ title: res.msg || "获取列表失败", icon: "none" });
+        }
+      } catch (error) {
+        console.error("Failed to fetch checkin list", error);
+      } finally {
         this.loading = false;
-        this.finished = this.recordsList.length >= this.mockRecords.length;
-
         if (isRefresh) {
           this.isRefreshing = false;
           uni.showToast({ title: "刷新成功", icon: "none" });
         }
-      }, 900);
+      }
     },
     loadMore() {
       if (this.loading || this.finished) return;

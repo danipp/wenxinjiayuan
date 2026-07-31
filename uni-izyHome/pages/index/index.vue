@@ -205,6 +205,7 @@ import NfcCheckinSuccess from "./components/NfcCheckinSuccess.vue";
 import PhoneAuthPopup from "@/components/PhoneAuthPopup.vue";
 import RecruitmentList from "./components/RecruitmentList.vue";
 import loginApi from "@/utils/login.js";
+import { create4 } from "@/api/index";
 export default {
   components: {
     CommunitySelector,
@@ -304,12 +305,12 @@ export default {
     },
   },
   onLoad(options) {
-    if (this.hasNfcCheckinParams(options)) {
-      this.nfcCheckinParams = this.formatNfcCheckinParams(options);
-      this.showNfcCheckinSuccess = true;
-    }
     loginApi().then((res) => {
       this.loadAd();
+      if (this.hasNfcCheckinParams(options)) {
+        this.nfcCheckinParams = this.formatNfcCheckinParams(options);
+        this.create4(this.nfcCheckinParams);
+      }
     });
   },
   onShow() {
@@ -320,6 +321,12 @@ export default {
     }
   },
   methods: {
+    // 创建打卡记录
+    create4(options) {
+      create4(options).then((res) => {
+        this.showNfcCheckinSuccess = true;
+      });
+    },
     hasNfcCheckinParams(options) {
       return !!(
         options &&
@@ -332,11 +339,13 @@ export default {
     formatNfcCheckinParams(options) {
       const cachedLocation = uni.getStorageSync("selected_community");
       return {
-        frameId: options.frameId || "",
-        cardId: options.cardId || "",
-        nfcId: options.nfcId || "",
-        checkinId: options.checkinId || "",
-        locationName: cachedLocation.name ? cachedLocation.name : "",
+        frameNo: options.frameId || "",
+        // cardId: options.cardId || "",
+        // nfcId: options.nfcId || "",
+        // checkinId: options.checkinId || "",
+        frameName: options.frameName || "",
+        frameImage: options.frameImage || "",
+        location: cachedLocation.name ? cachedLocation.name : "",
         rawParams: options,
       };
     },
