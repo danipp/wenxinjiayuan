@@ -101,10 +101,23 @@
         </view>
       </view>
     </view>
-
+    <view class="form-card">
+      <view class="card-title" style="margin-bottom: 28rpx"
+        >需求详细内容(必填)</view
+      >
+      <view class="remark-row">
+        <textarea
+          v-model="form.content"
+          placeholder="请输入需求详细内容"
+          maxlength="300"
+          class="remark-textarea"
+          placeholder-class="placeholder-style"
+        ></textarea>
+      </view>
+    </view>
     <!-- 4. 详细要求卡片 -->
     <view class="form-card">
-      <view class="card-title" style="margin-bottom: 28rpx">详细要求选填</view>
+      <view class="card-title" style="margin-bottom: 28rpx">备注</view>
       <view class="remark-row">
         <textarea
           v-model="form.remark"
@@ -192,11 +205,14 @@
 </template>
 
 <script>
+import { create3 } from '../api/demand';
+
 export default {
   data() {
     return {
       serviceName: "上门服务",
       form: {
+        title: "",
         name: "",
         phone: "",
         address: "",
@@ -204,6 +220,8 @@ export default {
         timeType: "negotiate",
         specificTime: "",
         remark: "",
+        content: "",
+        submitTimeStr: "",
       },
       showTimePopup: false,
       activeDateIndex: 0,
@@ -213,7 +231,11 @@ export default {
   },
   computed: {
     isFormValid() {
-      const baseValid = this.form.name && this.form.phone && this.form.address;
+      const baseValid =
+        this.form.name &&
+        this.form.phone &&
+        this.form.address &&
+        this.form.content;
       if (this.form.timeType === "specific") {
         return baseValid && this.form.specificTime;
       }
@@ -227,6 +249,7 @@ export default {
   onLoad(options) {
     if (options && options.name) {
       this.serviceName = decodeURIComponent(options.name);
+      this.form.title = decodeURIComponent(options.name);
     }
     uni.setNavigationBarTitle({
       title: this.serviceName,
@@ -268,6 +291,13 @@ export default {
         return `${m}月${d}日 (${labelText})`;
       };
 
+      const formatDateStr = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      };
+
       // 循环向后推导整整 30 天
       for (let i = 0; i < 30; i++) {
         const targetDate = new Date();
@@ -298,6 +328,7 @@ export default {
 
         dates.push({
           label: formatLabel(targetDate, i),
+          dateStr: formatDateStr(targetDate),
           slots: slots,
         });
       }
@@ -326,8 +357,15 @@ export default {
 
     confirmTimeSelection() {
       if (!this.tempSelectedSlot) return;
-      const selectedDateLabel =
-        this.timeSelectionData[this.activeDateIndex].label;
+      const selectedDate = this.timeSelectionData[this.activeDateIndex];
+      const selectedDateLabel = selectedDate.label;
+      
+      let timeStr = "00:00:00";
+      if (this.tempSelectedSlot.includes("上午")) timeStr = "08:00:00";
+      else if (this.tempSelectedSlot.includes("下午")) timeStr = "13:00:00";
+      else if (this.tempSelectedSlot.includes("晚上")) timeStr = "18:00:00";
+
+      this.form.submitTimeStr = `${selectedDate.dateStr} ${timeStr}`;
       this.form.specificTime = `${selectedDateLabel} ${this.tempSelectedSlot}`;
       this.showTimePopup = false;
     },
@@ -338,17 +376,41 @@ export default {
       });
     },
 
-    handleSubmit() {
+    async handleSubmit() {
       if (!this.isFormValid) {
         uni.showToast({ title: "请完善服务人及时间等信息", icon: "none" });
         return;
       }
       uni.showLoading({ title: "提交中..." });
-      setTimeout(() => {
+      
+      try {
+        const payload = {
+          title: this.form.title,
+          content: this.form.content,
+          location: this.form.address,
+          serviceTime: this.form.timeType === 'specific' ? this.form.submitTimeStr : '',
+          requirement: this.serviceName,
+          memberName: this.form.name,
+          memberPhone: this.form.phone,
+          memberAddress: this.form.address,
+          memberDetailAddress: this.form.detailAddress,
+          remark: this.form.remark
+        };
+
+        const res = await create3(payload);
         uni.hideLoading();
-        uni.showToast({ title: "提交成功，志愿者会尽快接单", icon: "none" });
-        setTimeout(() => uni.navigateBack(), 1200);
-      }, 1000);
+        
+        if (res.code === '00000') {
+          uni.showToast({ title: "提交成功，志愿者会尽快接单", icon: "none" });
+          setTimeout(() => uni.navigateBack(), 1200);
+        } else {
+          uni.showToast({ title: res.msg || "提交失败", icon: "none" });
+        }
+      } catch (error) {
+        uni.hideLoading();
+        console.error("提交需求失败", error);
+        uni.showToast({ title: "提交失败，请重试", icon: "none" });
+      }
     },
   },
 };

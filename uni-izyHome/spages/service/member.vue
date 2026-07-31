@@ -31,12 +31,14 @@
               }}</text>
             </view>
             <view class="card-address-row" v-if="member.detailAddress">
-              <text class="member-address text-ellipsis" style="margin-left: 40rpx;">{{
-                member.detailAddress
-              }}</text>
+              <text
+                class="member-address text-ellipsis"
+                style="margin-left: 40rpx"
+                >{{ member.detailAddress }}</text
+              >
             </view>
           </view>
-          
+
           <view class="card-actions">
             <view class="action-btn" @click.stop="openEdit(member)">
               <u-icon name="edit-pen" color="#94a3b8" size="20"></u-icon>
@@ -56,41 +58,87 @@
     </scroll-view>
 
     <!-- 底部添加按钮 -->
-    <view class="bottom-footer">
-      <u-button type="primary" shape="circle" text="添加服务对象" @click="openAdd"></u-button>
+    <view class="footer-bar" @click="openAdd">
+      <button class="submit-btn submit-btn-active" @click="handleSubmit">
+        添加服务对象
+      </button>
     </view>
 
     <!-- 表单弹窗 -->
-    <u-popup :show="showForm" mode="bottom" round="32" closeable @close="showForm = false">
+    <u-popup
+      :show="showForm"
+      mode="bottom"
+      round="32"
+      closeable
+      @close="showForm = false"
+    >
       <view class="form-container">
         <view class="form-header">
-          <text class="form-title">{{ form.memberId ? '编辑服务对象' : '新增服务对象' }}</text>
+          <text class="form-title">{{
+            form.memberId ? "编辑服务对象" : "新增服务对象"
+          }}</text>
           <text class="form-desc">请完善以下服务对象的基本信息</text>
         </view>
         <view class="form-content">
           <u-form :model="form" ref="uForm" labelWidth="160rpx">
             <u-form-item label="姓名" prop="name" borderBottom>
-              <u-input v-model="form.name" placeholder="请输入姓名" border="none" clearable></u-input>
+              <u-input
+                v-model="form.name"
+                placeholder="请输入姓名"
+                border="none"
+                clearable
+              ></u-input>
             </u-form-item>
             <u-form-item label="手机号" prop="phone" borderBottom>
-              <u-input v-model="form.phone" placeholder="请输入手机号" border="none" type="number" maxlength="11" clearable></u-input>
+              <u-input
+                v-model="form.phone"
+                placeholder="请输入手机号"
+                border="none"
+                type="number"
+                maxlength="11"
+                clearable
+              ></u-input>
             </u-form-item>
             <u-form-item label="服务地址" prop="address" borderBottom>
               <view @click="chooseLocation" class="location-picker-box">
-                <text :class="form.address ? 'value-text text-ellipsis' : 'placeholder-text'">{{ form.address || '点击选择地址' }}</text>
+                <text
+                  :class="
+                    form.address
+                      ? 'value-text text-ellipsis'
+                      : 'placeholder-text'
+                  "
+                  >{{ form.address || "点击选择地址" }}</text
+                >
                 <u-icon name="map" color="#07c160" size="18"></u-icon>
               </view>
             </u-form-item>
             <u-form-item label="详细门牌" prop="detailAddress" borderBottom>
-              <u-input v-model="form.detailAddress" placeholder="例: 12号楼1单元201室" border="none" clearable></u-input>
+              <u-input
+                v-model="form.detailAddress"
+                placeholder="例: 12号楼1单元201室"
+                border="none"
+                clearable
+              ></u-input>
             </u-form-item>
             <u-form-item label="备注说明" prop="remark" borderBottom>
-              <u-input v-model="form.remark" placeholder="请输入备注说明（选填）" border="none" clearable></u-input>
+              <u-input
+                v-model="form.remark"
+                placeholder="请输入备注说明（选填）"
+                border="none"
+                clearable
+              ></u-input>
             </u-form-item>
           </u-form>
         </view>
         <view class="form-btn-group">
-          <u-button type="primary" shape="circle" text="确认保存" @click="submitForm" color="#07c160" customStyle="height: 88rpx; font-size: 32rpx; font-weight: bold; box-shadow: 0 8rpx 24rpx rgba(7, 193, 96, 0.2);"></u-button>
+          <u-button
+            type="primary"
+            shape="circle"
+            text="确认保存"
+            @click="submitForm"
+            color="#07c160"
+            customStyle="height: 88rpx; font-size: 32rpx; font-weight: bold; box-shadow: 0 8rpx 24rpx rgba(7, 193, 96, 0.2);"
+          ></u-button>
         </view>
       </view>
     </u-popup>
@@ -98,7 +146,7 @@
 </template>
 
 <script>
-import { list1, save1, deleteServiceMember } from '../api/serviceMember';
+import { list1, save1, deleteServiceMember } from "../api/serviceMember";
 
 export default {
   data() {
@@ -107,12 +155,12 @@ export default {
       showForm: false,
       form: {
         memberId: null,
-        name: '',
-        phone: '',
-        address: '',
-        detailAddress: '',
-        remark: ''
-      }
+        name: "",
+        phone: "",
+        address: "",
+        detailAddress: "",
+        remark: "",
+      },
     };
   },
   onShow() {
@@ -122,21 +170,21 @@ export default {
     async getList() {
       try {
         const res = await list1();
-        if (res.code === '00000') {
+        if (res.code === "00000") {
           this.memberList = res.data || [];
         }
       } catch (error) {
-        console.error('获取服务对象列表失败', error);
+        console.error("获取服务对象列表失败", error);
       }
     },
     openAdd() {
       this.form = {
         memberId: null,
-        name: '',
-        phone: '',
-        address: '',
-        detailAddress: '',
-        remark: ''
+        name: "",
+        phone: "",
+        address: "",
+        detailAddress: "",
+        remark: "",
       };
       this.showForm = true;
     },
@@ -146,53 +194,56 @@ export default {
     },
     confirmDelete(member) {
       uni.showModal({
-        title: '提示',
+        title: "提示",
         content: `确定删除联系人 ${member.name} 吗？`,
         success: async (res) => {
           if (res.confirm) {
             try {
               const delRes = await deleteServiceMember(member.memberId);
-              if (delRes.code === '00000') {
-                uni.showToast({ title: '删除成功', icon: 'success' });
+              if (delRes.code === "00000") {
+                uni.showToast({ title: "删除成功", icon: "success" });
                 this.getList();
               } else {
-                uni.showToast({ title: delRes.msg || '删除失败', icon: 'none' });
+                uni.showToast({
+                  title: delRes.msg || "删除失败",
+                  icon: "none",
+                });
               }
             } catch (error) {
-              console.error('删除失败', error);
+              console.error("删除失败", error);
             }
           }
-        }
+        },
       });
     },
     chooseLocation() {
       uni.chooseLocation({
         success: (res) => {
           if (res.address || res.name) {
-            this.form.address = res.address + (res.name ? `(${res.name})` : '');
+            this.form.address = res.address + (res.name ? `(${res.name})` : "");
           }
         },
         fail: (err) => {
-          console.log('选择位置失败', err);
-        }
+          console.log("选择位置失败", err);
+        },
       });
     },
     async submitForm() {
       if (!this.form.name || !this.form.phone || !this.form.address) {
-        uni.showToast({ title: '请填写完整姓名、手机号和地址', icon: 'none' });
+        uni.showToast({ title: "请填写完整姓名、手机号和地址", icon: "none" });
         return;
       }
       try {
         const res = await save1(this.form);
-        if (res.code === '00000') {
-          uni.showToast({ title: '保存成功', icon: 'success' });
+        if (res.code === "00000") {
+          uni.showToast({ title: "保存成功", icon: "success" });
           this.showForm = false;
           this.getList();
         } else {
-          uni.showToast({ title: res.msg || '保存失败', icon: 'none' });
+          uni.showToast({ title: res.msg || "保存失败", icon: "none" });
         }
       } catch (error) {
-        console.error('保存失败', error);
+        console.error("保存失败", error);
       }
     },
     // 核心回传机制
@@ -334,7 +385,7 @@ export default {
   .form-container {
     padding: 48rpx 40rpx calc(48rpx + env(safe-area-inset-bottom));
     background-color: #ffffff;
-    
+
     .form-header {
       display: flex;
       flex-direction: column;
@@ -345,7 +396,7 @@ export default {
         font-weight: 800;
         color: #1a202c;
       }
-      
+
       .form-desc {
         font-size: 26rpx;
         color: #94a3b8;
@@ -392,6 +443,39 @@ export default {
 
     .form-btn-group {
       margin-top: 32rpx;
+    }
+  }
+}
+/* 底部固定操作栏 */
+.footer-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff;
+  box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.04);
+  padding: 24rpx 48rpx calc(24rpx + env(safe-area-inset-bottom)) 48rpx;
+  box-sizing: border-box;
+  z-index: 100;
+
+  .submit-btn {
+    width: 100%;
+    height: 96rpx;
+    line-height: 96rpx;
+    background-color: #a3e9c5;
+    color: #ffffff;
+    font-size: 32rpx;
+    font-weight: bold;
+    border-radius: 20rpx;
+    transition: background-color 0.2s ease;
+
+    &::after {
+      border: none;
+    }
+
+    &.submit-btn-active {
+      background-color: #07c160;
+      box-shadow: 0 8rpx 24rpx rgba(7, 193, 96, 0.25);
     }
   }
 }
