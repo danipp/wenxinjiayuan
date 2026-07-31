@@ -49,15 +49,15 @@
       <view class="tabs-box">
         <text
           class="tab-item"
-          :class="{ active: currentTab === 'community' }"
-          @click="currentTab = 'community'"
-          >社区活动</text
-        >
-        <text
-          class="tab-item"
           :class="{ active: currentTab === 'recruitment' }"
           @click="currentTab = 'recruitment'"
           >招募活动</text
+        >
+        <text
+          class="tab-item"
+          :class="{ active: currentTab === 'community' }"
+          @click="currentTab = 'community'"
+          >社区活动</text
         >
       </view>
     </view>
