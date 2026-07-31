@@ -7,7 +7,7 @@
       :style="{ height: 'calc(100vh - ' + headerHeight + 'rpx)' }"
       @scrolltolower="handleLoadMore"
     >
-      <view class="goods-grid">
+      <view class="goods-grid" v-if="goodsList.length">
         <view
           v-for="item in goodsList"
           :key="item.id"
@@ -27,16 +27,22 @@
           </view>
         </view>
       </view>
-
+      <view v-else>
+        <u-empty text="暂无商品" mode="search"></u-empty>
+      </view>
       <view class="load-more-tips">
         <text v-if="loading">加载中...</text>
-        <text v-else class="no-more">—— 已经是最后一页了 ——</text>
+        <text v-else-if="noMore && goodsList.length > 0" class="no-more"
+          >—— 已经是最后一页了 ——</text
+        >
       </view>
     </scroll-view>
   </view>
 </template>
 
 <script>
+import { page1 } from "@/api/goods";
+
 export default {
   props: {
     headerHeight: { type: Number, default: 200 },
@@ -44,43 +50,57 @@ export default {
   data() {
     return {
       loading: false,
-      goodsList: [
-        {
-          id: 301,
-          title: "志愿者定制高品质 304 不锈钢保温杯 (500ml)",
-          pointsPrice: 120,
-          cashPrice: 0,
-          sales: 241,
-          image:
-            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80",
-        },
-        {
-          id: 303,
-          title: "社区多功能应急救援高亮防身手电筒",
-          pointsPrice: 150,
-          cashPrice: 9.9,
-          sales: 92,
-          image: "https://image.16pic.com/00/55/57/16pic_5557645_s.jpg",
-        },
-        {
-          id: 304,
-          title: "志愿者雨天关怀折叠定制晴雨伞",
-          pointsPrice: 200,
-          cashPrice: 12.0,
-          sales: 114,
-          image: "https://image.16pic.com/00/93/44/16pic_9344910_s.png",
-        },
-      ],
+      noMore: false,
+      pageNum: 1,
+      pageSize: 10,
+      goodsList: [],
     };
   },
+  mounted() {
+    this.fetchGoods();
+  },
   methods: {
-    handleLoadMore() {
-      if (this.loading) return;
+    async fetchGoods() {
+      if (this.loading || this.noMore) return;
       this.loading = true;
-      setTimeout(() => {
+      try {
+        const res = await page1({
+          pageNumber: this.pageNum,
+          pageSize: this.pageSize,
+          goodsType: 3,
+          scene: "志愿者商城",
+          status: 1,
+        });
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast =
+          pageData.last !== undefined
+            ? pageData.last
+            : list.length < this.pageSize;
+
+        const mapped = list.map((item) => ({
+          id: item.goodsId || item.id,
+          title: item.title || "",
+          pointsPrice: item.pointsPrice || 0,
+          cashPrice: item.cashPrice || 0,
+          sales: item.salesCount || 0,
+          image: item.coverImage || "",
+        }));
+
+        this.goodsList =
+          this.pageNum === 1 ? mapped : [...this.goodsList, ...mapped];
+        this.noMore = isLast;
+        if (!isLast) this.pageNum++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
         this.loading = false;
-        uni.showToast({ title: "已加载最新积分商品", icon: "none" });
-      }, 800);
+      }
+    },
+    handleLoadMore() {
+      if (!this.loading && !this.noMore) {
+        this.fetchGoods();
+      }
     },
     goDetail(id) {
       uni.navigateTo({ url: `/spages/store/detail?id=${id}` });

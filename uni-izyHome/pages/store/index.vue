@@ -23,19 +23,14 @@
       </view>
     </view>
 
-    <!-- 3. 【组件化处理】：4 大分类子组件挂载区 (禁用 flex:1，采用硬性 calc 高度控制) -->
+    <!-- 3. 四大分类子组件挂载区 (使用 v-show 避免重复请求) -->
     <view class="sub-component-viewport">
-      <!-- 类类一：积分商城 (积分为主，辅以现金) -->
-      <PointsMall v-if="activeTab === 1" :headerHeight="200" />
-
-      <!-- 类类二：纯积分兑换 (凭积分免费兑换) -->
-      <PurePoints v-else-if="activeTab === 2" :headerHeight="200" />
-
-      <!-- 类类三：消费帮扶 (助农与扶贫专项) -->
-      <AssistanceMall v-else-if="activeTab === 3" :headerHeight="200" />
-
-      <!-- 类类四：超市运营 (社区超市自营直营) -->
-      <SupermarketOps v-else-if="activeTab === 4" :headerHeight="200" />
+      <!-- 分类一：志愿者商城 (goodsType=3) -->
+      <PointsMall v-show="activeTab === 1" :headerHeight="200" />
+      <!-- 分类二：积分兑换 (goodsType=1) -->
+      <PurePoints v-show="activeTab === 2" :headerHeight="200" />
+      <!-- 分类三：消费帮扶（暂不接接口） -->
+      <AssistanceMall v-show="activeTab === 3" :headerHeight="200" />
     </view>
 
     <!-- 社区选择弹窗组件 -->
@@ -55,7 +50,6 @@ import CommunitySelector from "@/components/community.vue";
 import PointsMall from "./components/PointsMall.vue";
 import PurePoints from "./components/PurePoints.vue";
 import AssistanceMall from "./components/AssistanceMall.vue";
-import SupermarketOps from "./components/SupermarketOps.vue";
 
 export default {
   components: {
@@ -63,7 +57,6 @@ export default {
     PointsMall,
     PurePoints,
     AssistanceMall,
-    SupermarketOps,
   },
   data() {
     return {
@@ -74,7 +67,6 @@ export default {
         { name: "志愿者商城", id: 1 },
         { name: "积分兑换", id: 2 },
         { name: "消费帮扶", id: 3 },
-        // { name: "自营超市", id: 4 },
       ],
     };
   },

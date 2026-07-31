@@ -6,7 +6,7 @@
       :style="{ height: 'calc(100vh - ' + headerHeight + 'rpx)' }"
       @scrolltolower="handleLoadMore"
     >
-      <view class="goods-grid">
+      <view class="goods-grid" v-if="goodsList.length">
         <view
           v-for="item in goodsList"
           :key="item.id"
@@ -26,16 +26,22 @@
           </view>
         </view>
       </view>
-
+      <view v-else>
+        <u-empty text="暂无商品" mode="search"></u-empty>
+      </view>
       <view class="load-more-tips">
         <text v-if="loading">加载中...</text>
-        <text v-else class="no-more">—— 已经是最后一页了 ——</text>
+        <text v-else-if="noMore && goodsList.length > 0" class="no-more"
+          >—— 已经是最后一页了 ——</text
+        >
       </view>
     </scroll-view>
   </view>
 </template>
 
 <script>
+import { page1 } from "@/api/goods";
+
 export default {
   props: {
     headerHeight: { type: Number, default: 200 },
@@ -43,34 +49,56 @@ export default {
   data() {
     return {
       loading: false,
-      goodsList: [
-        {
-          id: 302,
-          title: "爱心家园帆布袋（加厚双肩环保袋）",
-          pointsPrice: 50,
-          sales: 580,
-          image:
-            "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80",
-        },
-        {
-          id: 305,
-          title: "爱心志愿者专属纪念金属徽章礼盒",
-          pointsPrice: 30,
-          sales: 920,
-          image:
-            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80",
-        },
-      ],
+      noMore: false,
+      pageNum: 1,
+      pageSize: 10,
+      goodsList: [],
     };
   },
+  mounted() {
+    this.fetchGoods();
+  },
   methods: {
-    handleLoadMore() {
-      if (this.loading) return;
+    async fetchGoods() {
+      if (this.loading || this.noMore) return;
       this.loading = true;
-      setTimeout(() => {
+      try {
+        const res = await page1({
+          pageNumber: this.pageNum,
+          pageSize: this.pageSize,
+          goodsType: 1,
+          scene: "积分兑换",
+          status: 1,
+        });
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast =
+          pageData.last !== undefined
+            ? pageData.last
+            : list.length < this.pageSize;
+
+        const mapped = list.map((item) => ({
+          id: item.goodsId || item.id,
+          title: item.title || "",
+          pointsPrice: item.pointsPrice || 0,
+          sales: item.salesCount || 0,
+          image: item.coverImage || "",
+        }));
+
+        this.goodsList =
+          this.pageNum === 1 ? mapped : [...this.goodsList, ...mapped];
+        this.noMore = isLast;
+        if (!isLast) this.pageNum++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
         this.loading = false;
-        uni.showToast({ title: "已加载纯积分商品", icon: "none" });
-      }, 800);
+      }
+    },
+    handleLoadMore() {
+      if (!this.loading && !this.noMore) {
+        this.fetchGoods();
+      }
     },
     goDetail(id) {
       uni.navigateTo({ url: `/spages/store/detail?id=${id}` });

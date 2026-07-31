@@ -132,13 +132,8 @@ export default {
     // 加载店铺信息和商品列表
     async loadData() {
       try {
-        const [shopRes, goodsRes] = await Promise.all([
-          myShop(),
-          this.shopInfo.shopId
-            ? shopGoods(this.shopInfo.shopId)
-            : Promise.resolve({ data: [] }),
-        ]);
-
+        const shopRes = await myShop();
+        const goodsRes = await shopGoods(shopRes.data.shopId);
         const shop = shopRes.data || {};
         if (shop && shop.shopId) {
           this.shopInfo = {

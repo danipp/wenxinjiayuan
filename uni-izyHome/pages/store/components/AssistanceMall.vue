@@ -56,7 +56,7 @@
       </view>
     </view>
 
-    <!-- 金刚区 (图标菜单) -->
+    <!-- 金刚区 -->
     <view class="kingkong-box">
       <view
         class="kingkong-item"
@@ -90,94 +90,103 @@
     </view>
 
     <!-- 物资列表 -->
-    <view class="goods-list">
-      <view
-        class="goods-card"
-        v-for="item in goodsList"
-        :key="item.id"
-        @click="goToDetail(item.id)"
-      >
-        <!-- 左侧图片及倒计时标签 -->
-        <view class="goods-img-wrap">
-          <image class="goods-img" :src="item.image" mode="aspectFill"></image>
-          <view class="time-tag">{{ item.endTime }}结束</view>
-        </view>
-
-        <!-- 右侧信息 -->
-        <view class="goods-info">
-          <!-- 标题与类型标签 -->
-          <view class="title-wrap">
-            <text class="type-tag">捐赠</text>
-            <text class="goods-title u-line-1">{{ item.title }}</text>
-          </view>
-
-          <!-- 积分/价格（云豆已改为积分） -->
-          <view class="price-wrap">
-            <text class="points">{{ item.points }}</text>
-            <text class="points-unit">积分</text>
-            <text class="price-orig">原价 ¥{{ item.originalPrice }}</text>
-          </view>
-
-          <!-- 赞助企业 -->
-          <view class="company-wrap u-line-1">
+    <scroll-view scroll-y class="goods-list-scroll" @scrolltolower="loadMore">
+      <view class="goods-list" v-if="goodsList.length">
+        <view
+          class="goods-card"
+          v-for="item in goodsList"
+          :key="item.id"
+          @click="goToDetail(item.id)"
+        >
+          <view class="goods-img-wrap">
             <image
-              class="company-logo"
-              :src="item.companyLogo"
+              class="goods-img"
+              :src="item.image"
               mode="aspectFill"
             ></image>
-            <text class="company-name">{{ item.companyName }}</text>
+            <view class="time-tag">{{ item.endTime }}结束</view>
           </view>
 
-          <!-- 进度条 -->
-          <view class="progress-box">
-            <view class="progress-info">
-              <text>已申领 {{ item.applied }} / 总计 {{ item.total }}</text>
-              <text>{{ calculatePercent(item.applied, item.total) }}%</text>
+          <view class="goods-info">
+            <view class="title-wrap">
+              <text class="type-tag">捐赠</text>
+              <text class="goods-title u-line-1">{{ item.title }}</text>
             </view>
-            <u-line-progress
-              :percentage="calculatePercent(item.applied, item.total)"
-              activeColor="#FF5505"
-              height="10rpx"
-              :showText="false"
-            ></u-line-progress>
-          </view>
 
-          <!-- 状态操作按钮 -->
-          <view class="btn-wrap">
-            <!-- 状态 0: 立即申领, 1: 申领中, 2: 已领完 -->
-            <button
-              v-if="item.status === 0"
-              class="claim-btn btn-primary"
-              @click.stop="handleClaim(item)"
-            >
-              立即申领
-            </button>
-            <button
-              v-else-if="item.status === 1"
-              class="claim-btn btn-warning"
-              @click.stop="goToDetail(item.id)"
-            >
-              申领中
-            </button>
-            <button
-              v-else-if="item.status === 2"
-              class="claim-btn btn-disabled"
-              disabled
-            >
-              已领完
-            </button>
+            <view class="price-wrap">
+              <text class="points">{{ item.points }}</text>
+              <text class="points-unit">积分</text>
+              <text class="price-orig">原价 ¥{{ item.originalPrice }}</text>
+            </view>
+
+            <view class="company-wrap u-line-1">
+              <image
+                class="company-logo"
+                :src="item.companyLogo"
+                mode="aspectFill"
+              ></image>
+              <text class="company-name">{{ item.companyName }}</text>
+            </view>
+
+            <view class="progress-box">
+              <view class="progress-info">
+                <text>已申领 {{ item.applied }} / 总计 {{ item.total }}</text>
+                <text>{{ calculatePercent(item.applied, item.total) }}%</text>
+              </view>
+              <u-line-progress
+                :percentage="calculatePercent(item.applied, item.total)"
+                activeColor="#FF5505"
+                height="10rpx"
+                :showText="false"
+              ></u-line-progress>
+            </view>
+
+            <view class="btn-wrap">
+              <button
+                v-if="item.status === 0"
+                class="claim-btn btn-primary"
+                @click.stop="handleClaim(item)"
+              >
+                立即申领
+              </button>
+              <button
+                v-else-if="item.status === 1"
+                class="claim-btn btn-warning"
+                @click.stop="goToDetail(item.id)"
+              >
+                申领中
+              </button>
+              <button
+                v-else-if="item.status === 2"
+                class="claim-btn btn-disabled"
+                disabled
+              >
+                已领完
+              </button>
+            </view>
           </view>
         </view>
+
+        <view class="load-more-tips">
+          <text v-if="loading">加载中...</text>
+          <text v-else-if="noMore && goodsList.length > 0"
+            >—— 已经是最后一页了 ——</text
+          >
+        </view>
       </view>
-    </view>
+      <view v-else>
+        <u-empty text="暂无商品" mode="search"></u-empty>
+      </view>
+    </scroll-view>
   </view>
 </template>
 
 <script>
+import { page1 } from "@/api/goods";
+
 export default {
   data() {
     return {
-      // 顶部轮播图数据（更新为稳定高清图片素材）
       bannerList: [
         {
           image:
@@ -188,9 +197,7 @@ export default {
             "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800&auto=format&fit=crop&q=80",
         },
       ],
-      // 跑马灯文本
       noticeText: "素***8申领了广昌鲜莲冷冻软糯香甜纯天然无添加的榴莲",
-      // 金刚区数据
       kingkongList: [
         {
           name: "捐赠申请",
@@ -213,75 +220,85 @@ export default {
           icon: "https://img.icons8.com/color/96/handshake.png",
         },
       ],
-      currentTab: 0, // 0: 爱心物资, 1: 爱心YI餐
-      // 物资列表
-      goodsList: [
-        {
-          id: "101",
-          image:
-            "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&auto=format&fit=crop&q=60",
-          title: "冰丝透气圆领短袖",
-          points: 500,
-          originalPrice: "10",
-          companyLogo:
-            "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=100&auto=format&fit=crop&q=60",
-          companyName: "河南如豫科技有限公司",
-          applied: 16,
-          total: 299,
-          endTime: "12月31日",
-          status: 1, // 1: 申领中
-        },
-        {
-          id: "103",
-          image:
-            "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500&auto=format&fit=crop&q=60",
-          title: "广昌鲜莲冷冻软糯香甜纯天然",
-          points: 150,
-          originalPrice: "25",
-          companyLogo:
-            "https://images.unsplash.com/photo-1572021335469-31706a17aaef?w=100&auto=format&fit=crop&q=60",
-          companyName: "广昌农业生态科技",
-          applied: 5,
-          total: 50,
-          endTime: "12月15日",
-          status: 0, // 0: 立即申领
-        },
-      ],
+      currentTab: 0,
+      loading: false,
+      noMore: false,
+      pageNum: 1,
+      pageSize: 10,
+      goodsList: [],
     };
   },
+  mounted() {
+    this.fetchGoods();
+  },
   methods: {
-    // 金刚区点击提示
-    handleKingkongClick() {
-      uni.showToast({
-        title: "正在开发中",
-        icon: "none",
-      });
+    async fetchGoods() {
+      if (this.loading || this.noMore) return;
+      this.loading = true;
+      try {
+        const res = await page1({
+          pageNumber: this.pageNum,
+          pageSize: this.pageSize,
+          goodsType: 3,
+          scene: "消费帮扶",
+          status: 1,
+        });
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast =
+          pageData.last !== undefined
+            ? pageData.last
+            : list.length < this.pageSize;
+
+        const mapped = list.map((item) => ({
+          id: item.goodsId || item.id,
+          title: item.title || "",
+          points: item.pointsPrice || 0,
+          originalPrice: item.originalPrice || item.cashPrice || 0,
+          image: item.coverImage || "",
+          companyLogo: "",
+          companyName: item.delivery || "",
+          applied: item.salesCount || 0,
+          total: item.stock || 100,
+          endTime: "长期",
+          status: item.stock > 0 ? 0 : 2,
+        }));
+
+        this.goodsList =
+          this.pageNum === 1 ? mapped : [...this.goodsList, ...mapped];
+        this.noMore = isLast;
+        if (!isLast) this.pageNum++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
+        this.loading = false;
+      }
     },
-    // 计算百分比
+    loadMore() {
+      if (!this.loading && !this.noMore) {
+        this.fetchGoods();
+      }
+    },
+    handleKingkongClick() {
+      uni.showToast({ title: "正在开发中", icon: "none" });
+    },
     calculatePercent(applied, total) {
       if (!total || total === 0) return 0;
       let percent = Math.floor((applied / total) * 100);
       return percent > 100 ? 100 : percent;
     },
-    // 跳转到详情页
     goToDetail(id) {
-      uni.navigateTo({
-        url: `/spages/store/detail?id=${id}`,
-      });
+      uni.navigateTo({ url: `/spages/store/detail?id=${id}` });
     },
-    // 点击申领按钮事件
     handleClaim(item) {
       uni.showModal({
         title: "提示",
-        content: `确定要申领“${item.title}”吗？`,
+        content: "确定要申领" + item.title + "吗？",
         success: (res) => {
           if (res.confirm) {
-            item.status = 1; // 切换为申领中状态
+            item.status = 1;
             item.applied += 1;
-            uni.showToast({
-              title: "提交成功，请等待审核",
-              icon: "success",
-            });
+            uni.showToast({ title: "提交成功，请等待审核", icon: "success" });
           }
         },
       });
@@ -297,13 +314,11 @@ export default {
   padding: 20rpx 24rpx 40rpx 24rpx;
 }
 
-/* 轮播图 */
 .banner-box {
   border-radius: 16rpx;
   overflow: hidden;
 }
 
-/* 广播通知 */
 .notice-box {
   margin-top: 16rpx;
   border-radius: 12rpx;
@@ -311,7 +326,6 @@ export default {
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.02);
 }
 
-/* 4个统计卡片 */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -350,7 +364,6 @@ export default {
     }
   }
 
-  /* 渐变背景色配置 */
   .bg-green {
     background: linear-gradient(135deg, #32d398, #16ba80);
   }
@@ -365,7 +378,6 @@ export default {
   }
 }
 
-/* 金刚区 */
 .kingkong-box {
   margin-top: 24rpx;
   background-color: #ffffff;
@@ -395,7 +407,6 @@ export default {
   }
 }
 
-/* Tab 选项卡 */
 .tabs-box {
   display: flex;
   align-items: center;
@@ -434,7 +445,6 @@ export default {
   }
 }
 
-/* 物资商品列表 */
 .goods-list {
   display: flex;
   flex-direction: column;
@@ -556,7 +566,6 @@ export default {
         }
       }
 
-      /* 状态操作按钮 */
       .btn-wrap {
         display: flex;
         justify-content: flex-end;
@@ -594,5 +603,12 @@ export default {
       }
     }
   }
+}
+
+.load-more-tips {
+  text-align: center;
+  padding: 24rpx 0 40rpx 0;
+  font-size: 22rpx;
+  color: #cbd5e1;
 }
 </style>
