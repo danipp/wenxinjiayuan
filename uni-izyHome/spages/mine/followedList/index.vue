@@ -56,76 +56,23 @@
 </template>
 
 <script>
+import { page2 as getFollowPage } from '../../api/follow';
+
 export default {
   data() {
     return {
       page: 1,
-      pageSize: 8,
-      loading: true,
+      pageSize: 20,
+      loading: false,
       finished: false,
       isRefreshing: false,
       followList: [],
-      mockFollowList: [
-        {
-          id: 1,
-          name: "陈阿姨",
-          phone: "13800138000",
-          avatar: "https://cdn.uviewui.com/uview/album/1.jpg",
-        },
-        {
-          id: 2,
-          name: "",
-          phone: "13900139000",
-          avatar: "https://cdn.uviewui.com/uview/album/2.jpg",
-        },
-        {
-          id: 3,
-          name: "李先生",
-          phone: "13700137000",
-          avatar: "https://cdn.uviewui.com/uview/album/3.jpg",
-        },
-        {
-          id: 4,
-          name: "王姐",
-          phone: "13600136000",
-          avatar: "https://cdn.uviewui.com/uview/album/4.jpg",
-        },
-        {
-          id: 5,
-          name: "",
-          phone: "13500135000",
-          avatar: "https://cdn.uviewui.com/uview/album/5.jpg",
-        },
-        {
-          id: 6,
-          name: "小林",
-          phone: "13400134000",
-          avatar: "https://cdn.uviewui.com/uview/album/6.jpg",
-        },
-        {
-          id: 7,
-          name: "张叔",
-          phone: "13300133000",
-          avatar: "https://cdn.uviewui.com/uview/album/7.jpg",
-        },
-        {
-          id: 8,
-          name: "",
-          phone: "13200132000",
-          avatar: "https://cdn.uviewui.com/uview/album/8.jpg",
-        },
-        {
-          id: 9,
-          name: "赵阿姨",
-          phone: "13100131000",
-          avatar: "https://cdn.uviewui.com/uview/album/9.jpg",
-        },
-      ],
+      totalFollows: 0,
     };
   },
   computed: {
     totalPoints() {
-      return this.mockFollowList.length * 10;
+      return this.totalFollows * 10;
     },
   },
   onLoad() {
@@ -142,31 +89,47 @@ export default {
       this.followList = [];
       this.getList(true);
     },
-    getList(isRefresh = false) {
-      // 模拟接口请求，可替换为实际接口：page、pageSize
+    async getList(isRefresh = false) {
+      if (this.loading && !isRefresh) return;
       this.loading = true;
-      setTimeout(() => {
-        const start = (this.page - 1) * this.pageSize;
-        const nextList = this.mockFollowList.slice(
-          start,
-          start + this.pageSize
-        );
 
-        if (this.page === 1) {
-          this.followList = nextList;
+      try {
+        const res = await getFollowPage({
+          pageNumber: this.page,
+          pageSize: this.pageSize
+        });
+
+        if (res.code === '00000') {
+          const listData = res.data?.content || [];
+          this.totalFollows = res.data?.totalElements || 0;
+
+          const formattedList = listData.map(item => ({
+            id: item.id || item.followId,
+            name: item.followerName,
+            phone: item.followerPhone,
+            avatar: item.followerAvatar
+          }));
+
+          if (this.page === 1) {
+            this.followList = formattedList;
+          } else {
+            this.followList = this.followList.concat(formattedList);
+          }
+
+          this.finished = res.data?.last ?? (formattedList.length < this.pageSize);
+          this.page += 1;
         } else {
-          this.followList = this.followList.concat(nextList);
+          uni.showToast({ title: res.msg || "获取记录失败", icon: "none" });
         }
-
-        this.page += 1;
+      } catch (error) {
+        console.error("Failed to fetch follow list", error);
+      } finally {
         this.loading = false;
-        this.finished = this.followList.length >= this.mockFollowList.length;
-
         if (isRefresh) {
           this.isRefreshing = false;
           uni.showToast({ title: "刷新成功", icon: "none" });
         }
-      }, 900);
+      }
     },
     loadMore() {
       if (this.loading || this.finished) return;

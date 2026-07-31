@@ -26,7 +26,7 @@
         </view>
 
         <!-- 邀请加入按钮 -->
-        <view class="invite-btn" @click.stop="openInviteSelector">
+        <!-- <view class="invite-btn" @click.stop="openInviteSelector">
           <text>邀请加入</text>
           <u-icon
             name="arrow-right"
@@ -34,7 +34,7 @@
             size="10"
             style="margin-left: 4rpx"
           ></u-icon>
-        </view>
+        </view> -->
       </view>
 
       <!-- 荣誉指标数据 -->
