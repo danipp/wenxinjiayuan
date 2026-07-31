@@ -1,5 +1,4 @@
 import uploadMixin from './upload.js';
-
 /**
  * profileMixin.js
  * 专用于管理和录入用户“头像与昵称”的公共逻辑混入

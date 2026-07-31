@@ -49,6 +49,7 @@ export default {
         decryptPhoneNumber(code) {
             uni.showLoading({ title: '安全解密中...' });
             loginByAuth({ decodeTelCode: code }).then(res => {
+                this.phoneNumber = res.data;
                 uni.hideLoading();
                 uni.setStorageSync('user_phone_number', res.data);
 

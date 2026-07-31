@@ -68,11 +68,13 @@
           @click="showPhoneAuthedToast"
         ></view>
         <!-- #endif -->
-        <!-- #ifndef MP-WEIXIN -->
-        <div class="overlay-trigger-btn" @click="mockNonWechatAuth"></div>
-        <!-- #endif -->
       </view>
       <u-line color="#f1f5f9"></u-line>
+    </view>
+    <view class="fixed-btn">
+      <u-button type="success" @click="updateProfile" shape="circle"
+        >保存信息</u-button
+      >
     </view>
   </view>
 </template>
@@ -81,7 +83,7 @@
 // 仅引入核心混入逻辑，完全不引入外部组件
 import profileMixin from "@/utils/profileMixin.js";
 import phoneAuthMixin from "@/utils/phoneAuthMixin.js";
-
+import { updateProfile } from "@/api/login";
 export default {
   // 融合头像昵称、手机号混入
   mixins: [profileMixin, phoneAuthMixin],
@@ -99,27 +101,41 @@ export default {
     this.initPhoneNumber();
   },
   methods: {
-    blur() {
-      console.log(this.nickname);
-    },
     // A. 头像微信原生态直改
     handleChooseAvatar(e) {
       this.onChooseAvatar(e);
-      this.syncProfileToStorage();
+      this.updateProfile();
     },
     // B. 非微信平台头像选择回调
     handleCustomAvatarClick() {
       this.chooseCustomAvatar();
-      setTimeout(() => this.syncProfileToStorage(), 500);
+      this.updateProfile();
+    },
+    updateProfile() {
+      uni.showLoading({
+        mask: true,
+        title: "更新中...",
+      });
+      updateProfile({
+        avatarUrl: this.avatarUrl,
+        nickName: this.nickname,
+      }).then((res) => {
+        uni.showToast({
+          title: "保存成功",
+          icon: "success",
+        });
+        this.syncProfileToStorage();
+        setTimeout(() => {
+          this.$back();
+        }, 800);
+      });
     },
     // C. 微信联想键盘昵称同步
     handleNicknameInput(e) {
       this.onNicknameInput(e);
-      this.syncProfileToStorage();
     },
     handleNicknameBlur(e) {
       this.onNicknameBlur(e);
-      this.syncProfileToStorage();
     },
     // D. 微信原生手机号一键登录授权
     handleGetPhoneNumber(e) {
@@ -135,35 +151,12 @@ export default {
         icon: "none",
       });
     },
-    // E. 备用模拟非微信授权
-    mockNonWechatAuth() {
-      uni.showModal({
-        title: "模拟授权",
-        content: "是否一键绑定手机号 152******85？",
-        success: (res) => {
-          if (res.confirm) {
-            this.phoneNumber = "152******85";
-            uni.setStorageSync("user_phone_number", "152******85");
-          }
-        },
-      });
-    },
     // 同步到本地缓存
     syncProfileToStorage() {
       uni.setStorageSync("user_profile_data", {
         avatarUrl: this.avatarUrl,
         nickname: this.nickname,
       });
-    },
-    handleAction(type) {
-      if (type === "feedback") {
-        uni.setClipboardData({
-          data: "SSV_YINGJI@tencent.com",
-          success: () => uni.showToast({ title: "邮箱已复制" }),
-        });
-      } else {
-        uni.showToast({ title: "功能建设中...", icon: "none" });
-      }
     },
   },
 };
@@ -267,5 +260,15 @@ export default {
       user-select: text !important;
     }
   }
+}
+.fixed-btn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 40rpx 20rpx;
+  background-color: #fff;
+  border-radius: 10rpx 10rpx 0 0;
 }
 </style>

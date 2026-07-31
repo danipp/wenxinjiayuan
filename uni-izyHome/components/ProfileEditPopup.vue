@@ -86,7 +86,7 @@
 <script>
 // 引入刚刚编写的核心逻辑混入
 import profileMixin from "@/utils/profileMixin.js";
-
+import { updateProfile } from "@/api/login";
 export default {
   name: "ProfileEditPopup",
   mixins: [profileMixin], // 引入混入，当前组件立刻拥有所有头像/昵称逻辑
@@ -125,13 +125,17 @@ export default {
     handleConfirm() {
       // 调用 Mixin 的公共表单验证方法
       if (!this.validateProfile()) return;
-
-      // 验证通过，向父组件抛出最新设置的值
-      this.$emit("confirm", {
+      updateProfile({
         avatarUrl: this.avatarUrl,
-        nickname: this.nickname,
+        nickName: this.nickname,
+      }).then((res) => {
+        // 验证通过，向父组件抛出最新设置的值
+        this.$emit("confirm", {
+          avatarUrl: this.avatarUrl,
+          nickname: this.nickname,
+        });
+        this.$emit("update:show", false);
       });
-      this.$emit("update:show", false);
     },
   },
 };
