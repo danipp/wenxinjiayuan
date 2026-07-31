@@ -71,6 +71,12 @@
           }
         },
         {
+          "path": "mine/helpRecords/comments",
+          "style": {
+            "navigationBarTitleText": "去评价"
+          }
+        },
+        {
           "path": "mine/demandRecords/index",
           "style": {
             "navigationBarTitleText": "发布需求记录"
