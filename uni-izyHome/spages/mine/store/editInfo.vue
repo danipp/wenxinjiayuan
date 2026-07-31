@@ -1,17 +1,17 @@
 <template>
   <view class="edit-info-container">
     <view class="form-card">
-      <!-- 1. 店铺Logo (点击调用相册/相机) -->
-      <view class="form-row" @click="chooseLogo">
+      <!-- 1. 店铺Logo -->
+      <view class="form-row logo-row">
         <text class="label">店铺Logo</text>
-        <view class="right-box">
-          <image
-            class="avatar-preview"
-            :src="form.logo || defaultLogo"
-            mode="aspectFill"
-          ></image>
-          <u-icon name="arrow-right" color="#cbd5e1" size="28rpx"></u-icon>
-        </view>
+        <OssImageUpload
+          v-model="logoList"
+          :maxCount="1"
+          :minCount="0"
+          :showText="false"
+          uploadText="点击上传"
+          ossPath="shopLogo"
+        />
       </view>
       <u-line color="#f1f5f9"></u-line>
 
@@ -69,20 +69,6 @@
         />
       </view>
       <u-line color="#f1f5f9"></u-line>
-      <!-- 5. 二维码上传 (展示缩略图或引导上传) -->
-      <view class="form-row" @click="chooseQrCode">
-        <text class="label">二维码上传</text>
-        <view class="right-box">
-          <image
-            v-if="form.qrCode"
-            class="qr-thumbnail"
-            :src="form.qrCode"
-            mode="aspectFill"
-          ></image>
-          <text v-else class="upload-tips">点击上传</text>
-          <u-icon name="arrow-right" color="#cbd5e1" size="28rpx"></u-icon>
-        </view>
-      </view>
     </view>
 
     <!-- 6. 店铺简介 -->
@@ -112,10 +98,18 @@
 </template>
 
 <script>
+import OssImageUpload from "@/components/upload.vue";
+import { myShop, save } from "@/spages/api/store";
+
 export default {
+  components: {
+    OssImageUpload,
+  },
   data() {
     return {
+      shopId: null,
       defaultLogo: "https://cdn.uviewui.com/uview/album/1.jpg",
+      logoList: [],
       form: {
         logo: "",
         name: "",
@@ -128,26 +122,34 @@ export default {
     };
   },
   computed: {
-    // 除了简介和二维码选填，其余均为必填项才高亮按钮
+    // 名称、电话、地址为必填
     isFormValid() {
       return this.form.name && this.form.phone && this.form.address;
     },
   },
   onLoad() {
-    // 初始化读取缓存，反填表单
-    const cachedShop = uni.getStorageSync("my_cloud_shop_info");
-    if (cachedShop) {
-      this.form = { ...cachedShop };
-    }
+    this.loadShopData();
   },
   methods: {
-    chooseLogo() {
-      uni.chooseImage({
-        count: 1,
-        success: (res) => {
-          this.form.logo = res.tempFilePaths[0];
-        },
-      });
+    // 加载店铺数据回填
+    async loadShopData() {
+      try {
+        const res = await myShop();
+        const shop = res.data || {};
+        if (shop && shop.shopId) {
+          this.shopId = shop.shopId;
+          this.form.logo = shop.logo || "";
+          this.form.name = shop.name || "";
+          this.form.phone = shop.phone || "";
+          this.form.address = shop.address || "";
+          this.form.intro = shop.description || "";
+          if (shop.logo) {
+            this.logoList = [{ url: shop.logo }];
+          }
+        }
+      } catch (e) {
+        uni.showToast({ title: "加载店铺信息失败", icon: "none" });
+      }
     },
     chooseLocation() {
       uni.chooseLocation({
@@ -156,31 +158,33 @@ export default {
         },
       });
     },
-    chooseQrCode() {
-      uni.chooseImage({
-        count: 1,
-        success: (res) => {
-          this.form.qrCode = res.tempFilePaths[0];
-        },
-      });
-    },
-    handleSave() {
+    async handleSave() {
       if (!this.isFormValid) {
         uni.showToast({ title: "请填写店铺名称、电话和地址", icon: "none" });
         return;
       }
       uni.showLoading({ title: "资料保存中..." });
-
-      setTimeout(() => {
+      try {
+        const data = {
+          name: this.form.name,
+          logo:
+            this.logoList.length > 0 ? this.logoList[0].url : this.form.logo,
+          phone: this.form.phone,
+          address: this.form.address,
+          description: this.form.intro,
+        };
+        // 编辑时传 shopId
+        if (this.shopId) {
+          data.shopId = this.shopId;
+        }
+        await save(data);
         uni.hideLoading();
-        // 存入云店主干缓存
-        uni.setStorageSync("my_cloud_shop_info", this.form);
-        uni.showToast({
-          title: "店铺资料更新成功！",
-          icon: "success",
-        });
+        uni.showToast({ title: "店铺资料更新成功！", icon: "success" });
         setTimeout(() => uni.navigateBack(), 1200);
-      }, 800);
+      } catch (e) {
+        uni.hideLoading();
+        uni.showToast({ title: "保存失败，请重试", icon: "none" });
+      }
     },
   },
 };
@@ -258,6 +262,13 @@ export default {
       flex: 1;
       justify-content: flex-end;
       padding-left: 40rpx;
+    }
+
+    .logo-row {
+      align-items: flex-start;
+      :v-deep .image-upload-wrapper {
+        padding: 0;
+      }
     }
   }
 

@@ -13,10 +13,14 @@
           <view class="owner-details">
             <view class="title-row">
               <text class="store-name text-ellipsis">{{ shopInfo.name }}</text>
-              <text class="status-tag">管理中</text>
+              <text
+                class="status-tag"
+                :class="shopInfo.status === 1 ? 'status-open' : 'status-closed'"
+                >{{ shopInfo.status === 1 ? "营业中" : "歇业中" }}</text
+              >
             </view>
             <text class="store-intro text-ellipsis">{{
-              shopInfo.intro || "暂未填写店铺简介"
+              shopInfo.description || "暂未填写店铺简介"
             }}</text>
           </view>
 
@@ -34,10 +38,6 @@
 
         <!-- 经营看板数据 -->
         <view class="metrics-row">
-          <view class="metric-item">
-            <text class="num">1,280</text>
-            <text class="label">关注</text>
-          </view>
           <view class="divider"></view>
           <view class="metric-item">
             <text class="num">2</text>
@@ -61,6 +61,17 @@
             </view>
             <text class="tool-name">一键核销</text>
           </view>
+          <view class="tool-cell" @click="handleToggleStatus">
+            <view
+              class="icon-wrapper"
+              :class="shopInfo.status === 1 ? 'bg-red' : 'bg-green'"
+            >
+              <view class="power-icon"></view>
+            </view>
+            <text class="tool-name">{{
+              shopInfo.status === 1 ? "暂停营业" : "恢复营业"
+            }}</text>
+          </view>
           <view class="tool-cell" @click="goToEditInfo">
             <view class="icon-wrapper bg-blue">
               <u-icon name="setting" size="36rpx"></u-icon>
@@ -72,15 +83,20 @@
 
       <!-- 4. 我上架的商品 -->
       <view class="goods-list-section">
-        <text class="section-title">我上架的商品 (2)</text>
+        <text class="section-title">我上架的商品 ({{ myGoods.length }})</text>
         <view class="goods-list">
           <view v-for="item in myGoods" :key="item.id" class="goods-row-card">
-            <image class="g-cover" :src="item.image" mode="aspectFill"></image>
+            <image
+              class="g-cover"
+              :src="item.coverImage"
+              mode="aspectFill"
+            ></image>
             <view class="g-right">
               <text class="g-title text-ellipsis-2">{{ item.title }}</text>
               <view class="g-price-row">
                 <text class="g-price"
-                  >{{ item.pointsPrice }}<text class="unit">积分</text></text
+                  >{{ item.pointsPrice || 0
+                  }}<text class="unit">积分</text></text
                 >
                 <text class="g-stock">库存：{{ item.stock }}</text>
               </view>
@@ -93,45 +109,75 @@
 </template>
 
 <script>
+import { myShop, shopGoods, toggleStatus } from "@/spages/api/store";
+
 export default {
   data() {
     return {
       defaultLogo: "https://cdn.uviewui.com/uview/album/1.jpg",
       shopInfo: {
+        shopId: null,
         logo: "",
-        name: "石头的小店",
-        intro: "财厅前社区官方合作公益小铺，支持小红花及志愿积分兑换",
+        name: "加载中...",
+        description: "",
+        status: 1,
       },
-      myGoods: [
-        {
-          id: 301,
-          title: "志愿者定制高品质 304 不锈钢保温杯",
-          pointsPrice: 120,
-          stock: 45,
-          image:
-            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80",
-        },
-        {
-          id: 302,
-          title: "爱心家园帆布袋（加厚双肩环保袋）",
-          pointsPrice: 50,
-          stock: 120,
-          image:
-            "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80",
-        },
-      ],
+      myGoods: [],
     };
   },
-  onLoad() {},
   onShow() {
-    const cachedShop = uni.getStorageSync("my_cloud_shop_info");
-    if (cachedShop) {
-      this.shopInfo.logo = cachedShop.logo;
-      this.shopInfo.name = cachedShop.name;
-      this.shopInfo.intro = cachedShop.intro;
-    }
+    this.loadData();
   },
   methods: {
+    // 加载店铺信息和商品列表
+    async loadData() {
+      try {
+        const [shopRes, goodsRes] = await Promise.all([
+          myShop(),
+          this.shopInfo.shopId
+            ? shopGoods(this.shopInfo.shopId)
+            : Promise.resolve({ data: [] }),
+        ]);
+
+        const shop = shopRes.data || {};
+        if (shop && shop.shopId) {
+          this.shopInfo = {
+            shopId: shop.shopId,
+            logo: shop.logo || "",
+            name: shop.name || "",
+            description: shop.description || "",
+            status: shop.status || 1,
+          };
+          // 有 shopId 后才拉商品
+          const goodsList = Array.isArray(goodsRes.data) ? goodsRes.data : [];
+          // 如果还没拉过商品
+          if (this.myGoods.length === 0) {
+            this.myGoods = goodsList.map((g) => ({
+              id: g.goodsId || g.id,
+              title: g.title || "",
+              coverImage: g.coverImage || "",
+              pointsPrice: g.pointsPrice || 0,
+              stock: g.stock || 0,
+            }));
+          } else {
+            // onShow 回来只更新数据
+            const reloaded = await shopGoods(shop.shopId);
+            const reloadedList = Array.isArray(reloaded.data)
+              ? reloaded.data
+              : [];
+            this.myGoods = reloadedList.map((g) => ({
+              id: g.goodsId || g.id,
+              title: g.title || "",
+              coverImage: g.coverImage || "",
+              pointsPrice: g.pointsPrice || 0,
+              stock: g.stock || 0,
+            }));
+          }
+        }
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      }
+    },
     handleBack() {
       uni.navigateBack();
     },
@@ -140,8 +186,17 @@ export default {
         url: "/spages/mine/store/editInfo",
       });
     },
-    handleToolClick(type) {
-      uni.showToast({ title: "上架商品功能正在开发中...", icon: "none" });
+    // 营业状态切换
+    async handleToggleStatus() {
+      if (!this.shopInfo.shopId) return;
+      try {
+        await toggleStatus(this.shopInfo.shopId);
+        this.shopInfo.status = this.shopInfo.status === 1 ? 2 : 1;
+        const tip = this.shopInfo.status === 1 ? "已恢复营业" : "已暂停营业";
+        uni.showToast({ title: tip, icon: "success" });
+      } catch (e) {
+        uni.showToast({ title: "操作失败", icon: "none" });
+      }
     },
     handleVerify() {
       uni.showModal({
@@ -226,6 +281,10 @@ export default {
             background-color: #2b5c9c;
             padding: 4rpx 12rpx;
             border-radius: 8rpx;
+
+            &.status-closed {
+              background-color: #94a3b8;
+            }
           }
         }
 
@@ -322,6 +381,50 @@ export default {
             background-color: #eff6ff;
             :deep(.u-icon__icon) {
               color: #2b5c9c !important;
+            }
+          }
+          &.bg-green {
+            background-color: #ecfdf5;
+
+            .power-icon {
+              width: 36rpx;
+              height: 36rpx;
+              border: 3rpx solid #059669;
+              border-radius: 50%;
+              position: relative;
+
+              &::after {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 2rpx;
+                height: 20rpx;
+                background-color: #059669;
+              }
+            }
+          }
+          &.bg-red {
+            background-color: #fef2f2;
+
+            .power-icon {
+              width: 36rpx;
+              height: 36rpx;
+              border: 3rpx solid #dc2626;
+              border-radius: 50%;
+              position: relative;
+
+              &::after {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 2rpx;
+                height: 20rpx;
+                background-color: #dc2626;
+              }
             }
           }
         }
