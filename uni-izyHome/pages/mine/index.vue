@@ -40,18 +40,18 @@
       <!-- 荣誉指标数据 -->
       <view class="stats-row">
         <view class="stat-item">
-          <text class="stat-num">{{ userInfo.redFlowers }}</text>
-          <text class="stat-label">收到小红花</text>
+          <text class="stat-num">{{ pointDetail.balance }}</text>
+          <text class="stat-label">可用积分余额</text>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item">
-          <text class="stat-num">{{ userInfo.helpCount }}</text>
-          <text class="stat-label">助人次数</text>
+          <text class="stat-num">{{ pointDetail.totalEarned }}</text>
+          <text class="stat-label">累计获得积分</text>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item">
-          <text class="stat-num">{{ userInfo.integral }}</text>
-          <text class="stat-label">积分</text>
+          <text class="stat-num">{{ pointDetail.totalSpent }}</text>
+          <text class="stat-label">累计消耗积分</text>
         </view>
       </view>
     </view>
@@ -280,7 +280,7 @@
 <script>
 // 引入关联组件
 import CommunitySelector from "@/components/community.vue";
-
+import { getPointsDetail } from "@/api/mine.js";
 export default {
   components: {
     CommunitySelector,
@@ -294,11 +294,16 @@ export default {
       userInfo: {
         avatar: "",
         nickname: "",
-        redFlowers: 0,
-        helpCount: 0,
-        integral: 0,
+      },
+      pointDetail: {
+        balance: 0,
+        totalEarned: 0,
+        totalSpent: 0,
       },
     };
+  },
+  onLoad(options) {
+    this.getPointsDetail();
   },
   onShow() {
     // 页面初始化时读取本地是否有编辑过的用户信息
@@ -309,6 +314,13 @@ export default {
     }
   },
   methods: {
+    getPointsDetail() {
+      getPointsDetail().then((res) => {
+        this.pointDetail.balance = res.data.balance;
+        this.pointDetail.totalEarned = res.data.totalEarned;
+        this.pointDetail.totalSpent = res.data.totalSpent;
+      });
+    },
     // 1. 打开二维码弹窗
     openQrCode() {
       this.showQrCode = true;
