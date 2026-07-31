@@ -12,7 +12,7 @@
         <view v-for="order in filteredList" :key="order.id" class="order-card">
           <view class="card-header">
             <text class="order-num">订单号：{{ order.orderNum }}</text>
-            <text class="status-text" :class="order.status">{{
+            <text class="status-text" :class="order.statusCls">{{
               order.statusText
             }}</text>
           </view>
@@ -34,9 +34,15 @@
 
           <!-- 操作行 -->
           <view class="card-footer">
+            <!-- 待支付：取消订单 + 去支付 -->
+            <template v-if="order.status === 10">
+              <button class="footer-btn btn-cancel" @click="handleCancel(order)">取消订单</button>
+              <button class="footer-btn btn-primary-solid" @click="handlePay(order)">去支付</button>
+            </template>
+
             <!-- 待领取：出示核销 -->
             <button
-              v-if="order.status === 'pending'"
+              v-else-if="order.status === 20"
               class="footer-btn btn-primary-border"
               @click="showRedeemCode(order)"
             >
@@ -45,16 +51,26 @@
 
             <!-- 待评价：引流去评价页 -->
             <button
-              v-if="order.status === 'evaluate'"
+              v-else-if="order.status === 30 && !order.commentId"
               class="footer-btn btn-primary-solid"
               @click="goWriteReview(order)"
             >
               去评价
             </button>
 
-            <!-- 已完成 -->
-            <text v-if="order.status === 'completed'" class="completed-tips"
-              >已于社区志愿者服务中心领取</text
+            <!-- 已完成（已评价） -->
+            <text v-else-if="order.status === 30" class="completed-tips"
+              >已完成</text
+            >
+
+            <!-- 退款申请中 -->
+            <text v-else-if="order.status === 40 || order.status === 41 || order.status === 42" class="completed-tips"
+              >退款处理中</text
+            >
+
+            <!-- 已退款 -->
+            <text v-else-if="order.status === 50" class="completed-tips"
+              >已退款</text
             >
           </view>
         </view>
@@ -95,68 +111,117 @@
 </template>
 
 <script>
+import { page, redeemCode as getRedeemCode, cancel } from "@/spages/api/order";
+
+// 订单状态码映射
+const STATUS_MAP = {
+  10: { text: "待支付", cls: "status-pending" },
+  20: { text: "待领取", cls: "status-pending" },
+  30: { text: "已完成", cls: "status-completed" },
+  40: { text: "退款中", cls: "status-refund" },
+  41: { text: "退款中", cls: "status-refund" },
+  42: { text: "退款中", cls: "status-refund" },
+  50: { text: "已退款", cls: "status-refund" },
+};
+
 export default {
   props: {
-    status: { type: String, default: "all" }, // 接收父组件传入的状态过滤字
+    status: { type: String, default: "all" },
   },
   data() {
     return {
       isRefreshing: false,
+      loading: false,
+      noMore: false,
       codePopupShow: false,
       activeOrder: {},
-      // 模拟买家拥有的三态数据
-      buyerOrders: [
-        {
-          id: 501,
-          orderNum: "B202606010024",
-          status: "pending",
-          statusText: "待领取",
-          title: "志愿者定制高品质 304 不锈钢保温杯 (500ml)",
-          image:
-            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80",
-          priceText: "120 积分",
-          count: 1,
-          redeemCode: "584 921",
-        },
-        {
-          id: 502,
-          orderNum: "B202605200114",
-          status: "evaluate",
-          statusText: "待评价",
-          title: "爱心家园帆布袋（加厚双肩环保袋）",
-          image:
-            "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80",
-          priceText: "50 积分",
-          count: 1,
-          redeemCode: "",
-        },
-        {
-          id: 503,
-          orderNum: "B202604100082",
-          status: "completed",
-          statusText: "已完成",
-          title: "社区多功能应急救援高亮防身手电筒",
-          image:
-            "https://images.unsplash.com/photo-1563201374-1c97a1d3528d?auto=format&fit=crop&w=400&q=80",
-          priceText: "150 积分",
-          count: 1,
-          redeemCode: "",
-        },
-      ],
+      pageNum: 1,
+      pageSize: 10,
+      buyerOrders: [],
     };
   },
   computed: {
     filteredList() {
-      if (this.status === "all") return this.buyerOrders;
-      return this.buyerOrders.filter((o) => o.status === this.status);
+      return this.buyerOrders;
     },
   },
+  watch: {
+    status() {
+      this.pageNum = 1;
+      this.noMore = false;
+      this.buyerOrders = [];
+      this.fetchOrders();
+    },
+  },
+  mounted() {
+    this.fetchOrders();
+  },
   methods: {
-    showRedeemCode(order) {
-      this.activeOrder = order;
+    // 根据 tab 构建请求参数
+    buildParams() {
+      const params = {
+        pageNumber: this.pageNum,
+        pageSize: this.pageSize,
+        role: "buyer",
+      };
+      if (this.status === "pending") {
+        params.status = 20;
+      } else if (this.status === "completed") {
+        params.status = 30;
+      } else if (this.status === "evaluate") {
+        params.pendingComment = true;
+      }
+      return params;
+    },
+    async fetchOrders() {
+      if (this.loading || this.noMore) return;
+      this.loading = true;
+      try {
+        const res = await page(this.buildParams());
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast = pageData.last !== undefined ? pageData.last : list.length < this.pageSize;
+
+        const mapped = list.map((item) => {
+          const statusInfo = STATUS_MAP[item.status] || { text: "未知", cls: "" };
+          return {
+            id: item.orderId || item.id,
+            orderNum: item.orderNum || "",
+            status: item.status || 0,
+            statusText: statusInfo.text,
+            statusCls: statusInfo.cls,
+            title: item.goodsTitle || "",
+            image: item.goodsImage || "",
+            priceText: item.payType === 1
+              ? `${item.totalPoints || 0} 积分`
+              : `¥${(item.totalAmount || 0).toFixed(2)}`,
+            count: item.count || 1,
+            redeemCode: item.redeemCode || "",
+            commentId: item.commentId,
+            payParams: item.payParamsJson ? JSON.parse(item.payParamsJson) : null,
+          };
+        });
+
+        this.buyerOrders = this.pageNum === 1 ? mapped : [...this.buyerOrders, ...mapped];
+        this.noMore = isLast;
+        if (!isLast) this.pageNum++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
+        this.loading = false;
+        this.isRefreshing = false;
+      }
+    },
+    async showRedeemCode(order) {
+      try {
+        const res = await getRedeemCode(order.id);
+        const code = res.data || order.redeemCode || "";
+        this.activeOrder = { ...order, redeemCode: code };
+      } catch (e) {
+        this.activeOrder = order;
+      }
       this.codePopupShow = true;
     },
-    // 跳转去评价页面，携带社区活动信息（带入我们此前写好的评价页）
     goWriteReview(order) {
       const encodedTitle = encodeURIComponent(order.title);
       uni.navigateTo({
@@ -165,12 +230,49 @@ export default {
     },
     onRefresh() {
       this.isRefreshing = true;
-      setTimeout(() => {
-        this.isRefreshing = false;
-      }, 800);
+      this.pageNum = 1;
+      this.noMore = false;
+      this.buyerOrders = [];
+      this.fetchOrders();
     },
     loadMore() {
-      console.log("加载买家下一页...");
+      if (!this.noMore && !this.loading) {
+        this.fetchOrders();
+      }
+    },
+    // 买家取消订单
+    async handleCancel(order) {
+      uni.showModal({
+        title: "取消订单",
+        content: "确定要取消该订单吗？",
+        success: async (res) => {
+          if (res.confirm) {
+            try {
+              await cancel(order.id);
+              uni.showToast({ title: "已取消", icon: "success" });
+              this.onRefresh();
+            } catch (e) {
+              uni.showToast({ title: "取消失败", icon: "none" });
+            }
+          }
+        },
+      });
+    },
+    // 去支付
+    handlePay(order) {
+      // 如果后端返回了微信支付参数，则调起支付
+      if (order.payParams) {
+        uni.requestPayment({
+          ...order.payParams,
+          success: () => {
+            uni.showToast({ title: "支付成功", icon: "success" });
+            this.onRefresh();
+          },
+          fail: () => {
+            uni.showToast({ title: "支付取消", icon: "none" });
+          },
+        });
+      }
     },
   },
 };

@@ -56,31 +56,29 @@
 </template>
 
 <script>
+import { create2 } from "@/spages/api/order";
+
 export default {
   data() {
     return {
-      orderId: "", // 订单ID
-      goodsTitle: "公益商品", // 商品标题（兜底）
-      rating: 0, // 选中的星级 (0-5)
-      content: "", // 评价内容
+      orderId: "",
+      goodsTitle: "公益商品",
+      rating: 0,
+      content: "",
     };
   },
   computed: {
-    // 只有打过星级且输入了内容，提交按钮才高亮并允许点击
     isFormValid() {
       return this.rating > 0 && this.content.trim().length > 0;
     },
   },
   onLoad(options) {
-    // 接收买家订单列表跳转带过来的参数
     if (options) {
       if (options.id) this.orderId = options.id;
       if (options.communityName) {
-        // 解码并还原商品标题（URL参数带过来的是 encodedTitle）
         this.goodsTitle = decodeURIComponent(options.communityName);
       }
     }
-
     uni.setNavigationBarTitle({
       title: "商品评价",
     });
@@ -89,26 +87,27 @@ export default {
     setRating(val) {
       this.rating = val;
     },
-    handleSubmit() {
+    async handleSubmit() {
       if (!this.isFormValid) {
         uni.showToast({ title: "请填写评分及体验感受", icon: "none" });
         return;
       }
-
       uni.showLoading({ title: "发布评价中..." });
-
-      setTimeout(() => {
-        uni.hideLoading();
-        uni.showToast({
-          title: "评价成功，感谢您的反馈！",
-          icon: "success",
+      try {
+        await create2({
+          orderId: Number(this.orderId),
+          rating: this.rating,
+          content: this.content,
         });
-
-        // 成功后延迟返回上一级订单列表
+        uni.hideLoading();
+        uni.showToast({ title: "评价成功，感谢您的反馈！", icon: "success" });
         setTimeout(() => {
           uni.navigateBack();
         }, 1200);
-      }, 1000);
+      } catch (e) {
+        uni.hideLoading();
+        uni.showToast({ title: "评价失败，请重试", icon: "none" });
+      }
     },
   },
 };

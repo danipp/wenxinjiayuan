@@ -216,6 +216,12 @@
           }
         },
         {
+          "path": "store/order/detail",
+          "style": {
+            "navigationBarTitleText": "订单详情"
+          }
+        },
+        {
           "path": "store/order/comments",
           "style": {
             "navigationBarTitleText": "写评价"

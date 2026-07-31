@@ -12,9 +12,8 @@
         <view v-for="order in filteredList" :key="order.id" class="order-card">
           <view class="card-header">
             <text class="order-num">订单号：{{ order.orderNum }}</text>
-            <!-- 卖家端待领取显示为待核销 -->
-            <text class="status-text" :class="order.status">
-              {{ order.status === "pending" ? "待核销" : order.statusText }}
+            <text class="status-text" :class="order.statusCls">
+              {{ order.statusText }}
             </text>
           </view>
 
@@ -35,17 +34,27 @@
 
           <!-- 卖家操作行 -->
           <view class="card-footer">
-            <!-- 待核销：卖家专属绿色一键核销确认机制 -->
+            <!-- 待核销（status=20）：卖家核销 -->
             <button
-              v-if="order.status === 'pending'"
+              v-if="order.status === 20"
               class="footer-btn btn-primary-solid"
               @click="handleVerifyOrder(order)"
             >
               核销订单
             </button>
 
-            <text v-if="order.status === 'completed'" class="completed-tips"
+            <!-- 退款申请（status=40/41/42）：同意退款 / 拒绝退款 -->
+            <template v-if="order.status === 40 || order.status === 41 || order.status === 42">
+              <button class="footer-btn btn-primary-solid" @click="handleApproveRefund(order)">同意退款</button>
+              <button class="footer-btn btn-deny" @click="handleRejectRefund(order)">拒绝退款</button>
+            </template>
+
+            <text v-if="order.status === 30" class="completed-tips"
               >买家已核销成功，已出库</text
+            >
+
+            <text v-if="order.status === 50" class="completed-tips"
+              >已退款</text
             >
           </view>
         </view>
@@ -61,6 +70,18 @@
 </template>
 
 <script>
+import { page, verify, approveRefund, rejectRefund } from "@/spages/api/order";
+
+const STATUS_MAP = {
+  10: { text: "待支付", cls: "status-pending" },
+  20: { text: "待核销", cls: "status-pending" },
+  30: { text: "已完成", cls: "status-completed" },
+  40: { text: "退款申请", cls: "status-refund" },
+  41: { text: "退款申请", cls: "status-refund" },
+  42: { text: "退款申请", cls: "status-refund" },
+  50: { text: "已退款", cls: "status-refund" },
+};
+
 export default {
   props: {
     status: { type: String, default: "all" },
@@ -68,66 +89,132 @@ export default {
   data() {
     return {
       isRefreshing: false,
-      // 模拟卖家接单数据
-      sellerOrders: [
-        {
-          id: 601,
-          orderNum: "S202606010998",
-          status: "pending",
-          statusText: "待领取",
-          title: "志愿者定制高品质 304 不锈钢保温杯 (500ml)",
-          image:
-            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80",
-          priceText: "已收 120 积分",
-          count: 1,
-          correctCode: "584921", // 模拟正确的提取验证码
-        },
-        {
-          id: 602,
-          orderNum: "S202605200885",
-          status: "completed",
-          statusText: "已完成",
-          title: "志愿者雨天关怀折叠定制晴雨伞",
-          image:
-            "https://images.unsplash.com/photo-1527786356703-4b100091cdb0?auto=format&fit=crop&w=400&q=80",
-          priceText: "已收 200 积分",
-          count: 1,
-          correctCode: "",
-        },
-      ],
+      loading: false,
+      noMore: false,
+      pageNum: 1,
+      pageSize: 10,
+      sellerOrders: [],
     };
   },
   computed: {
     filteredList() {
-      // 卖家没有“待评价”，若选待评价，展示空以体现精细结构
-      if (this.status === "evaluate") return [];
-      if (this.status === "all") return this.sellerOrders;
-      return this.sellerOrders.filter((o) => o.status === this.status);
+      return this.sellerOrders;
     },
   },
+  watch: {
+    status() {
+      this.pageNum = 1;
+      this.noMore = false;
+      this.sellerOrders = [];
+      this.fetchOrders();
+    },
+  },
+  mounted() {
+    this.fetchOrders();
+  },
   methods: {
-    // 卖家一键核销闭环逻辑
-    handleVerifyOrder(order) {
+    buildParams() {
+      const params = {
+        pageNumber: this.pageNum,
+        pageSize: this.pageSize,
+        role: "seller",
+      };
+      if (this.status === "pending") {
+        params.status = 20;
+      } else if (this.status === "completed") {
+        params.status = 30;
+      } else if (this.status === "refund") {
+        params.statusList = [40, 41, 42, 50];
+      }
+      return params;
+    },
+    async fetchOrders() {
+      if (this.loading || this.noMore) return;
+      this.loading = true;
+      try {
+        const res = await page(this.buildParams());
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast = pageData.last !== undefined ? pageData.last : list.length < this.pageSize;
+
+        const mapped = list.map((item) => {
+          const statusInfo = STATUS_MAP[item.status] || { text: "未知", cls: "" };
+          return {
+            id: item.orderId || item.id,
+            orderNum: item.orderNum || "",
+            status: item.status || 0,
+            statusText: statusInfo.text,
+            statusCls: statusInfo.cls,
+            title: item.goodsTitle || "",
+            image: item.goodsImage || "",
+            priceText: item.payType === 1
+              ? `已收 ${item.totalPoints || 0} 积分`
+              : `已收 ¥${(item.totalAmount || 0).toFixed(2)}`,
+            count: item.count || 1,
+          };
+        });
+
+        this.sellerOrders = this.pageNum === 1 ? mapped : [...this.sellerOrders, ...mapped];
+        this.noMore = isLast;
+        if (!isLast) this.pageNum++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
+        this.loading = false;
+        this.isRefreshing = false;
+      }
+    },
+    // 卖家核销
+    async handleVerifyOrder(order) {
       uni.showModal({
         title: "核销商品验证",
-        placeholderText: "请输入买家的 6 位数核销码",
-        editable: true, // 开启 uni 弹窗的原生输入框模式！
-        success: (res) => {
+        placeholderText: "请输入买家的核销码",
+        editable: true,
+        success: async (res) => {
           if (res.confirm) {
-            const inputVal = res.content.replace(/\s+/g, ""); // 过滤空格
-            if (inputVal === order.correctCode) {
-              uni.showLoading({ title: "核销出库中..." });
-              setTimeout(() => {
-                uni.hideLoading();
-                order.status = "completed";
-                order.statusText = "已完成";
-                uni.showToast({ title: "核销成功！已出库", icon: "success" });
-              }, 600);
-            } else {
-              uni.showToast({
-                title: "核销码错误，请重新向买家确认",
-                icon: "none",
-              });
+            const code = (res.content || "").replace(/\s+/g, "");
+            try {
+              await verify({ orderId: order.id, redeemCode: code });
+              uni.showToast({ title: "核销成功！已出库", icon: "success" });
+              this.onRefresh();
+            } catch (e) {
+              uni.showToast({ title: "核销失败，请检查核销码", icon: "none" });
+            }
+          }
+        },
+      });
+    },
+    // 同意退款
+    async handleApproveRefund(order) {
+      uni.showModal({
+        title: "确认退款",
+        content: "同意后将自动退款给买家，确定吗？",
+        success: async (res) => {
+          if (res.confirm) {
+            try {
+              await approveRefund(order.id);
+              uni.showToast({ title: "已同意退款", icon: "success" });
+              this.onRefresh();
+            } catch (e) {
+              uni.showToast({ title: "操作失败", icon: "none" });
+            }
+          }
+        },
+      });
+    },
+    // 拒绝退款
+    async handleRejectRefund(order) {
+      uni.showModal({
+        title: "拒绝退款",
+        content: "拒绝后将恢复订单为待核销状态，确定吗？",
+        success: async (res) => {
+          if (res.confirm) {
+            try {
+              await rejectRefund(order.id);
+              uni.showToast({ title: "已拒绝退款", icon: "success" });
+              this.onRefresh();
+            } catch (e) {
+              uni.showToast({ title: "操作失败", icon: "none" });
             }
           }
         },
@@ -135,12 +222,15 @@ export default {
     },
     onRefresh() {
       this.isRefreshing = true;
-      setTimeout(() => {
-        this.isRefreshing = false;
-      }, 800);
+      this.pageNum = 1;
+      this.noMore = false;
+      this.sellerOrders = [];
+      this.fetchOrders();
     },
     loadMore() {
-      console.log("加载卖家下一页...");
+      if (!this.noMore && !this.loading) {
+        this.fetchOrders();
+      }
     },
   },
 };
@@ -148,4 +238,19 @@ export default {
 
 <style lang="scss" scoped>
 @import "./orderComponent.scss";
+
+.btn-deny {
+  background-color: #f5f7fa;
+  color: #555;
+  border-radius: 44rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  font-size: 26rpx;
+  font-weight: bold;
+  padding: 0 28rpx;
+
+  &::after {
+    border: none;
+  }
+}
 </style>

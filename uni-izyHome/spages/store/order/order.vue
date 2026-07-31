@@ -87,10 +87,6 @@ export default {
     switchTopTab(idx) {
       this.topActiveTab = idx;
       this.subActiveTab = 0;
-      uni.showToast({
-        title: `已切换至“${idx === 0 ? "我买的" : "我卖的"}”并重置`,
-        icon: "none",
-      });
     },
   },
 };
