@@ -29,6 +29,11 @@
               member.address
             }}</text>
           </view>
+          <view class="card-address-row">
+            <text class="member-address text-ellipsis">{{
+              member.detailAddress
+            }}</text>
+          </view>
 
           <!-- 选中右下角小绿勾标记 -->
           <!-- <view class="select-indicator">
@@ -55,11 +60,13 @@ export default {
           name: "罗大完成",
           phone: "13812345678",
           address: "广东省广州市越秀区青菜岗43号启东楼",
+          detailAddress: "12号楼1单元",
         },
         {
           name: "秉治",
           phone: "13987654321",
           address: "广州市海珠区海心沙亚运公园 102 房",
+          detailAddress: "12号楼1单元",
         },
         {
           name: "石头",

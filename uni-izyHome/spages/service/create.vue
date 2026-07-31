@@ -240,6 +240,7 @@ export default {
       this.form.name = selectedMember.name;
       this.form.phone = selectedMember.phone;
       this.form.address = selectedMember.address;
+      this.form.detailAddress = selectedMember.detailAddress;
       uni.removeStorageSync("selected_member_data");
     }
   },
