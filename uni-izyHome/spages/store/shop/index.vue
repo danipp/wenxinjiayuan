@@ -5,46 +5,46 @@
       <view class="shop-main-info">
         <image
           class="shop-avatar"
-          src="https://cdn.uviewui.com/uview/album/1.jpg"
+          :src="shopInfo.logo || 'https://cdn.uviewui.com/uview/album/1.jpg'"
           mode="aspectFill"
         ></image>
         <view class="shop-text-info">
           <view class="title-row">
-            <text class="shop-name">石头的小店</text>
+            <text class="shop-name">{{ shopInfo.name }}</text>
             <text class="volunteer-badge">爱心店主</text>
           </view>
-          <text class="shop-desc text-ellipsis"
-            >财厅前社区官方合作公益小铺</text
-          >
+          <text class="shop-desc text-ellipsis">{{
+            shopInfo.description
+          }}</text>
         </view>
       </view>
 
       <!-- 数据指标看板 -->
       <view class="shop-stats-row">
         <view class="stat-item">
-          <text class="num">248</text>
+          <text class="num">{{ shopInfo.followCount }}</text>
           <text class="label">关注收藏</text>
         </view>
         <view class="divider"></view>
         <view class="stat-item">
-          <text class="num">1,420</text>
+          <text class="num">{{ shopInfo.fansCount }}</text>
           <text class="label">粉丝</text>
         </view>
         <view class="divider"></view>
         <view class="stat-item">
           <text class="num">580</text>
-          <text class="label">月销量</text>
+          <text class="label">{{ shopInfo.monthlySales }}</text>
         </view>
       </view>
     </view>
 
     <!-- 2. 本店商品列表区 -->
     <view class="shop-goods-section">
-      <text class="section-title">本店商品 (4)</text>
+      <text class="section-title">本店商品 ({{ shopGoodsList.length }})</text>
 
       <view class="goods-grid">
         <view
-          v-for="item in shopGoods"
+          v-for="item in shopGoodsList"
           :key="item.id"
           class="goods-card"
           @click="goGoodsDetail(item.id)"
@@ -100,50 +100,93 @@
 </template>
 
 <script>
+import { detail } from "@/spages/api/store";
+import { shopGoods } from "@/spages/api/store";
+import { collect, isCollected } from "@/spages/api/goods";
+
 export default {
   data() {
     return {
+      shopId: null,
       isShopFavorited: false,
-      sellerPhone: "13800138000", // 绑定的联系电话
-      shopGoods: [
-        {
-          id: 301,
-          title: "志愿者定制高品质 304 不锈钢保温杯",
-          pointsPrice: 120,
-          image:
-            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80",
-        },
-        {
-          id: 302,
-          title: "爱心家园帆布袋（加厚双肩环保袋）",
-          pointsPrice: 50,
-          image:
-            "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80",
-        },
-      ],
+      sellerPhone: "13800138000",
+      shopInfo: {
+        logo: "",
+        name: "加载中...",
+        description: "",
+        followCount: 0,
+        fansCount: 0,
+        monthlySales: 0,
+      },
+      shopGoodsList: [],
     };
   },
-  onLoad() {
+  onLoad(options) {
     uni.setNavigationBarTitle({ title: "店铺主页" });
+    if (options.shopId) {
+      this.shopId = Number(options.shopId);
+      this.fetchShopData();
+      this.checkCollected();
+    }
   },
   methods: {
-    toggleShopFavorite() {
-      this.isShopFavorited = !this.isShopFavorited;
-      uni.showToast({
-        title: this.isShopFavorited ? "收藏店铺成功" : "已取消收藏店铺",
-        icon: "none",
-      });
+    async fetchShopData() {
+      try {
+        const [shopRes, goodsRes] = await Promise.all([
+          detail(this.shopId),
+          shopGoods(this.shopId),
+        ]);
+        const shop = shopRes.data || {};
+        this.shopInfo = {
+          logo: shop.logo || "",
+          name: shop.name || "",
+          description: shop.description || "",
+          monthlySales: shop.monthlySales || 0,
+          fansCount: shop.fansCount || 0,
+          followCount: shop.followCount || 0,
+        };
+        this.sellerPhone = shop.phone || "";
+
+        const goodsArr = Array.isArray(goodsRes.data) ? goodsRes.data : [];
+        this.shopGoodsList = goodsArr.map((item) => ({
+          id: item.goodsId || item.id,
+          title: item.title || "",
+          pointsPrice: item.pointsPrice || 0,
+          image: item.coverImage || "",
+        }));
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      }
     },
-    // 调用真实物理拨号
+    async checkCollected() {
+      if (!this.shopId) return;
+      try {
+        const res = await isCollected({ targetId: this.shopId, targetType: 2 });
+        this.isShopFavorited = !!res.data;
+      } catch (e) {
+        /* ignore */
+      }
+    },
+    async toggleShopFavorite() {
+      if (!this.shopId) return;
+      try {
+        await collect({ targetId: this.shopId, targetType: 2 });
+        this.isShopFavorited = !this.isShopFavorited;
+        uni.showToast({
+          title: this.isShopFavorited ? "收藏店铺成功" : "已取消收藏店铺",
+          icon: "none",
+        });
+      } catch (e) {
+        uni.showToast({ title: "操作失败", icon: "none" });
+      }
+    },
     handleCall() {
-      uni.makePhoneCall({
-        phoneNumber: this.sellerPhone,
-      });
+      if (this.sellerPhone) {
+        uni.makePhoneCall({ phoneNumber: this.sellerPhone });
+      }
     },
     goGoodsDetail(id) {
-      uni.navigateTo({
-        url: `/spages/store/detail?id=${id}`,
-      });
+      uni.navigateTo({ url: `/spages/store/detail?id=${id}` });
     },
   },
 };

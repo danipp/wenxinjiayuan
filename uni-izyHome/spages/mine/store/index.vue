@@ -40,12 +40,12 @@
         <view class="metrics-row">
           <view class="divider"></view>
           <view class="metric-item">
-            <text class="num">2</text>
+            <text class="num">{{ shopInfo.fansCount }}</text>
             <text class="label">粉丝</text>
           </view>
           <view class="divider"></view>
           <view class="metric-item">
-            <text class="num">241</text>
+            <text class="num">{{ shopInfo.followCount }}</text>
             <text class="label">收藏</text>
           </view>
         </view>
@@ -121,6 +121,8 @@ export default {
         name: "加载中...",
         description: "",
         status: 1,
+        followCount: 0,
+        fansCount: 0,
       },
       myGoods: [],
     };
@@ -142,6 +144,8 @@ export default {
             name: shop.name || "",
             description: shop.description || "",
             status: shop.status || 1,
+            fansCount: shop.fansCount || 0,
+            followCount: shop.followCount || 0,
           };
           // 有 shopId 后才拉商品
           const goodsList = Array.isArray(goodsRes.data) ? goodsRes.data : [];

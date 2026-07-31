@@ -1,7 +1,10 @@
 <template>
   <view class="detail-container">
     <u-sticky>
-      <u-notice-bar :text="goods.noticeText" mode="closable"></u-notice-bar>
+      <u-notice-bar
+        text="本店将从每笔成交订单中拿出1%资金投身公益"
+        mode="closable"
+      ></u-notice-bar>
     </u-sticky>
     <!-- 1. 商品大图轮播 -->
     <swiper
@@ -41,7 +44,9 @@
         </view>
         <!-- 金额购买模式 -->
         <view v-else class="price-box">
-          <text class="cash-num-big">¥{{ goods.cashPrice || goods.price }}</text>
+          <text class="cash-num-big"
+            >¥{{ goods.cashPrice || goods.price }}</text
+          >
         </view>
         <text class="goods-title">{{ goods.title }}</text>
         <view class="postage-row">
@@ -103,7 +108,10 @@
             </view>
             <text class="comment-text-content">{{ item.content }}</text>
             <!-- 评价素材图片 -->
-            <view v-if="item.images && item.images.length" class="comment-images">
+            <view
+              v-if="item.images && item.images.length"
+              class="comment-images"
+            >
               <image
                 v-for="(img, imgIdx) in item.images"
                 :key="imgIdx"
@@ -156,99 +164,131 @@
       </view>
 
       <!-- C. 主按钮：偶数id积分兑换，奇数id金额购买 -->
-      <button v-if="isPointsExchange" class="buy-action-btn" @click="handleRedeem">立即兑换</button>
-      <button v-else class="buy-action-btn pay-btn" @click="handlePurchase">立即购买 ¥{{ goods.cashPrice || goods.price }}</button>
+      <button
+        v-if="isPointsExchange"
+        class="buy-action-btn"
+        @click="handleRedeem"
+      >
+        立即兑换
+      </button>
+      <button v-else class="buy-action-btn pay-btn" @click="handlePurchase">
+        立即购买 ¥{{ goods.cashPrice || goods.price }}
+      </button>
     </view>
   </view>
 </template>
 
 <script>
+import { detail2 } from "@/spages/api/goods";
+import { create } from "@/spages/api/order";
+import { collect, isCollected } from "@/spages/api/goods";
+
 export default {
   data() {
     return {
+      goodsId: null,
       userPoints: 850,
-      isFavorited: false, // 收藏商品状态
-      isPointsExchange: true, // 是否积分兑换（偶数id为true，奇数id为false）
+      isFavorited: false,
+      isPointsExchange: true,
       goods: {
-        id: 301,
-        title: "志愿者定制高品质 304 不锈钢保温杯 (500ml)",
-        noticeText:
-          "好物相伴，善意同行，本店将从每笔成交订单中拿出 1% 资金投身公益",
-        pointsPrice: 120,
+        id: null,
+        title: "加载中...",
+        pointsPrice: 0,
         cashPrice: 0,
-        price: 59.9, // 金额购买时的价格
-        carouselImages: [
-          "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80",
-        ],
-        specs: {
-          material: "食品级 304 不锈钢",
-          size: "500ml 极简保温杯",
-        },
-        description:
-          "这款保温杯专为社区爱心志愿者倾力打造，采用食品级 304 不锈钢，保温保冷长达12小时。",
+        price: 0,
+        carouselImages: [],
+        specs: {},
+        description: "",
+        shopId: null,
       },
-      // 模拟多条评价数据，用作最多展示2条的逻辑过滤
-      comments: [
-        {
-          name: "秉治",
-          avatar: "https://cdn.uviewui.com/uview/album/1.jpg",
-          content: "保温杯质量很赞，保温时间非常持久！",
-          images: [
-            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=200&q=80",
-            "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=200&q=80",
-          ],
-        },
-        {
-          name: "罗完成",
-          avatar: "https://cdn.uviewui.com/uview/album/2.jpg",
-          content: "拿积分换的，感觉很有意义，非常开心。",
-          images: [
-            "https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=200&q=80",
-          ],
-        },
-        {
-          name: "张阿姨",
-          avatar: "https://cdn.uviewui.com/uview/album/3.jpg",
-          content: "杯子很轻便，很适合晨跑的时候带着。",
-          images: [],
-        },
-      ],
+      comments: [],
     };
   },
   onLoad(options) {
     uni.setNavigationBarTitle({ title: "商品详情" });
-    // 根据传入的id判断：偶数→积分兑换，奇数→金额购买
     if (options.id) {
-      const gid = parseInt(options.id);
-      this.goods.id = gid;
-      this.isPointsExchange = gid % 2 === 0;
+      this.goodsId = Number(options.id);
+      this.fetchDetail();
+      this.checkCollected();
     }
   },
-  onShareAppMessage() {
-    return {
-      title: this.goods.title,
-      path: `/spages/store/detail?id=${this.goods.id}`,
-    };
-  },
   methods: {
-    goToShop() {
-      uni.navigateTo({
-        url: "/spages/store/shop/index",
-      });
+    // 加载商品详情
+    async fetchDetail() {
+      try {
+        const res = await detail2(this.goodsId);
+        const d = res.data || {};
+        // 解析规格 JSON
+        let specs = {};
+        if (d.specs) {
+          try {
+            specs = typeof d.specs === "string" ? JSON.parse(d.specs) : d.specs;
+          } catch (e) {
+            specs = {};
+          }
+        }
+        this.goods = {
+          id: d.goodsId || d.id,
+          title: d.title || "",
+          pointsPrice: d.pointsPrice || 0,
+          cashPrice: d.cashPrice || 0,
+          price: d.cashPrice || d.originalPrice || 0,
+          carouselImages:
+            d.carouselImages && d.carouselImages.length > 0
+              ? d.carouselImages
+              : d.coverImage
+              ? [d.coverImage]
+              : [],
+          specs: specs,
+          description: d.description || "",
+          shopId: d.shopId,
+          goodsType: d.goodsType,
+        };
+        this.isPointsExchange = d.goodsType === 1 || d.goodsType === 3;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      }
     },
-    toggleFavorite() {
-      this.isFavorited = !this.isFavorited;
-      uni.showToast({
-        title: this.isFavorited ? "商品收藏成功" : "已取消收藏",
-        icon: "none",
-      });
+    // 检查收藏状态
+    async checkCollected() {
+      try {
+        const res = await isCollected({
+          targetId: this.goodsId,
+          targetType: 1,
+        });
+        this.isFavorited = !!res.data;
+      } catch (e) {
+        /* ignore */
+      }
+    },
+    goToShop() {
+      if (this.goods.shopId) {
+        uni.navigateTo({
+          url: `/spages/store/shop/index?shopId=${this.goods.shopId}`,
+        });
+      }
+    },
+    async toggleFavorite() {
+      try {
+        await collect({
+          targetId: this.goodsId,
+          targetType: 1,
+        });
+        this.isFavorited = !this.isFavorited;
+        uni.showToast({
+          title: this.isFavorited ? "商品收藏成功" : "已取消收藏",
+          icon: "none",
+        });
+      } catch (e) {
+        uni.showToast({ title: "操作失败", icon: "none" });
+      }
     },
     goToAllComments() {
       uni.navigateTo({
         url: `/spages/store/goods/comments?id=${this.goods.id}`,
       });
     },
-    handleRedeem() {
+    async handleRedeem() {
       if (this.userPoints < this.goods.pointsPrice) {
         uni.showToast({ title: "爱心积分余额不足！", icon: "none" });
         return;
@@ -257,39 +297,78 @@ export default {
         title: "确认兑换",
         content: `确定消耗 ${this.goods.pointsPrice} 积分兑换该商品吗？`,
         confirmColor: "#e2ab5b",
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
             uni.showLoading({ title: "兑换处理中..." });
-            setTimeout(() => {
+            try {
+              const orderRes = await create({
+                goodsId: this.goodsId,
+                count: 1,
+                payType: 1,
+              });
               uni.hideLoading();
               this.userPoints -= this.goods.pointsPrice;
+              const orderData = orderRes.data || {};
               uni.showModal({
-                title: "兑换成功！🎉",
-                content: "凭此核销，请至社区中心进行核销换取物资。",
+                title: "兑换成功！",
+                content: `订单号：${orderData.orderNum || ""}\n核销码：${
+                  orderData.redeemCode || ""
+                }\n凭此核销，请至社区中心核销换取物资。`,
                 showCancel: false,
               });
-            }, 800);
+            } catch (e) {
+              uni.hideLoading();
+              uni.showToast({ title: "兑换失败，请重试", icon: "none" });
+            }
           }
         },
       });
     },
-    handlePurchase() {
+    async handlePurchase() {
       const price = this.goods.cashPrice || this.goods.price;
       uni.showModal({
         title: "确认购买",
         content: `确定以 ¥${price} 购买该商品吗？`,
         confirmColor: "#e2ab5b",
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
             uni.showLoading({ title: "支付处理中..." });
-            setTimeout(() => {
-              uni.hideLoading();
-              uni.showModal({
-                title: "购买成功！🎉",
-                content: `已支付 ¥${price}，请至社区中心领取商品。`,
-                showCancel: false,
+            try {
+              const orderRes = await create({
+                goodsId: this.goodsId,
+                count: 1,
+                payType: 2,
               });
-            }, 800);
+              uni.hideLoading();
+              const orderData = orderRes.data || {};
+              // 如果返回微信支付参数，则调起支付
+              if (orderData.payParams) {
+                uni.requestPayment({
+                  ...orderData.payParams,
+                  success: () => {
+                    uni.showModal({
+                      title: "购买成功！",
+                      content: "已支付，请至社区中心领取商品。",
+                      showCancel: false,
+                    });
+                  },
+                  fail: () => {
+                    uni.showToast({ title: "支付取消", icon: "none" });
+                  },
+                });
+              } else {
+                uni.showModal({
+                  title: "下单成功！",
+                  content: `订单号：${
+                    orderData.orderNum || ""
+                  }，请完成支付后领取商品。`,
+                  showCancel: false,
+                });
+              }
+            } catch (e) {
+              uni.hideLoading();
+              uni.showToast({ title: "下单失败，请重试", icon: "none" });
+            }
           }
         },
       });
