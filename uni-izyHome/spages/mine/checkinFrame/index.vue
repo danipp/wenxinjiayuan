@@ -5,10 +5,10 @@
         <text class="page-title">购买打卡相框</text>
         <text class="page-desc">适用于社区活动与志愿服务记录</text>
       </view>
-      <view class="order-entry" @click="goOrderPage">
+      <!-- <view class="order-entry" @click="goOrderPage">
         <u-icon name="order" color="#07c160" size="36rpx"></u-icon>
         <text>订单</text>
-      </view>
+      </view> -->
     </view>
 
     <scroll-view
@@ -82,6 +82,8 @@
 
 <script>
 import FrameDetailPopup from "./components/FrameDetailPopup.vue";
+import { page1 } from "@/api/goods";
+import { create } from "@/spages/api/order";
 
 export default {
   components: {
@@ -90,47 +92,17 @@ export default {
   data() {
     return {
       page: 1,
-      pageSize: 6,
-      loading: true,
+      pageSize: 10,
+      loading: false,
       finished: false,
       isRefreshing: false,
       showFrameDetail: false,
       currentFrame: {},
       frameList: [],
-      mockFrames: [
-        {
-          id: 1,
-          frameNo: "FRAME-NFC-001",
-          name: "社区标准打卡相框",
-          image: "/static/frames/frame1.png",
-          price: "68.00",
-          stock: 28,
-          size: "6寸",
-          scene: "社区活动",
-          delivery: "社区配送",
-          desc: "适合社区活动室、志愿者服务站使用的 NFC 打卡相框。",
-          features: ["NFC碰一碰", "快速打卡", "活动记录", "轻量安装"],
-        },
-        {
-          id: 2,
-          frameNo: "FRAME-NFC-002",
-          name: "长者关怀打卡相框",
-          image: "/static/frames/frame2.png",
-          price: "88.00",
-          stock: 16,
-          size: "7寸",
-          scene: "长者探访",
-          delivery: "社区配送",
-          desc: "用于长者探访、上门关怀等服务场景，方便留存服务记录。",
-          features: ["探访记录", "NFC识别", "信息同步", "温馨外观"],
-        },
-      ],
     };
   },
   onLoad() {
-    uni.setNavigationBarTitle({
-      title: "购买打卡相框",
-    });
+    uni.setNavigationBarTitle({ title: "购买打卡相框" });
     this.getList();
   },
   methods: {
@@ -141,52 +113,93 @@ export default {
       this.frameList = [];
       this.getList(true);
     },
-    getList(isRefresh = false) {
-      // 模拟接口请求，可替换为实际接口：page、pageSize
+    async getList(isRefresh = false) {
+      if (this.loading || (this.finished && !isRefresh)) return;
       this.loading = true;
-      setTimeout(() => {
-        const start = (this.page - 1) * this.pageSize;
-        const nextList = this.mockFrames.slice(start, start + this.pageSize);
+      try {
+        const res = await page1({
+          pageNumber: this.page,
+          pageSize: this.pageSize,
+          goodsType: 4,
+          scene: "打卡相框",
+          status: 1,
+        });
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast =
+          pageData.last !== undefined
+            ? pageData.last
+            : list.length < this.pageSize;
+
+        const mapped = list.map((item) => ({
+          id: item.goodsId || item.id,
+          frameNo: item.frameNo || "",
+          name: item.title || "",
+          image: item.coverImage || "",
+          price: item.cashPrice || item.originalPrice || 0,
+          stock: item.stock || 0,
+          size: item.frameSize || "",
+          scene: item.scene || "",
+          delivery: item.delivery || "",
+          desc: item.description || "",
+          features: item.features || [],
+        }));
 
         if (this.page === 1) {
-          this.frameList = nextList;
+          this.frameList = mapped;
         } else {
-          this.frameList = this.frameList.concat(nextList);
+          this.frameList = [...this.frameList, ...mapped];
         }
 
-        this.page += 1;
+        this.finished = isLast;
+        if (!isLast) this.page++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
         this.loading = false;
-        this.finished = this.frameList.length >= this.mockFrames.length;
-
-        if (isRefresh) {
-          this.isRefreshing = false;
-          uni.showToast({ title: "刷新成功", icon: "none" });
-        }
-      }, 900);
+        if (isRefresh) this.isRefreshing = false;
+      }
     },
     loadMore() {
       if (this.loading || this.finished) return;
       this.getList();
     },
     goOrderPage() {
-      uni.navigateTo({
-        url: "/spages/mine/checkinFrame/order",
-      });
+      uni.navigateTo({ url: "/spages/mine/checkinFrame/order" });
     },
     openFrameDetail(item) {
       this.currentFrame = item;
       this.showFrameDetail = true;
     },
-    handlePay(frameInfo) {
+    async handlePay(frameInfo) {
       uni.showLoading({ title: "拉起支付中..." });
-
-      // 模拟拉起支付，后续替换为 uni.requestPayment 即可
-      setTimeout(() => {
+      try {
+        const orderRes = await create({
+          goodsId: frameInfo.id,
+          count: 1,
+          payType: 2,
+        });
         uni.hideLoading();
-        uni.showToast({ title: "支付成功", icon: "success" });
-        this.showFrameDetail = false;
-        console.log("购买打卡相框：", frameInfo);
-      }, 1000);
+        const orderData = orderRes.data || {};
+        if (orderData.payParams) {
+          uni.requestPayment({
+            ...orderData.payParams,
+            success: () => {
+              uni.showToast({ title: "支付成功", icon: "success" });
+              this.showFrameDetail = false;
+            },
+            fail: () => {
+              uni.showToast({ title: "支付取消", icon: "none" });
+            },
+          });
+        } else {
+          uni.showToast({ title: "下单成功", icon: "success" });
+          this.showFrameDetail = false;
+        }
+      } catch (e) {
+        uni.hideLoading();
+        uni.showToast({ title: "支付失败，请重试", icon: "none" });
+      }
     },
   },
 };

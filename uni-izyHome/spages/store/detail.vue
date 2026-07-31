@@ -1,10 +1,7 @@
 <template>
   <view class="detail-container">
     <u-sticky>
-      <u-notice-bar
-        text="本店将从每笔成交订单中拿出1%资金投身公益"
-        mode="closable"
-      ></u-notice-bar>
+      <u-notice-bar :text="goods.noticeText" mode="closable"></u-notice-bar>
     </u-sticky>
     <!-- 1. 商品大图轮播 -->
     <swiper
@@ -18,7 +15,6 @@
     </swiper>
     <view class="charity-donation-badge">
       <view class="badge-left">
-        <!-- 带有柔和起伏动画的爱心图标 -->
         <view class="heart-pulse-icon">
           <u-icon name="heart-fill" color="#ff4d4f" size="20"></u-icon>
         </view>
@@ -55,7 +51,7 @@
         </view>
       </view>
 
-      <!-- 3. 兑换预算看板（仅积分兑换模式展示） -->
+      <!-- 3. 兑换预算看板 -->
       <view v-if="isPointsExchange" class="points-budget-card">
         <view class="budget-top">
           <u-icon name="integral-fill" color="#d97706" size="18"></u-icon>
@@ -76,7 +72,7 @@
         </view>
       </view>
 
-      <!-- 4. 【新增】：商品评价模块（最多展示2条） -->
+      <!-- 4. 商品评价模块 -->
       <view class="comments-section-card">
         <view class="card-header">
           <text class="card-title">宝贝评价 ({{ comments.length }})</text>
@@ -90,7 +86,6 @@
           </view>
         </view>
 
-        <!-- 评价列表（最多展示2条） -->
         <view class="comments-list">
           <view
             v-for="(item, index) in comments.slice(0, 2)"
@@ -107,7 +102,6 @@
               <view class="stars">⭐️⭐️⭐️⭐️⭐️</view>
             </view>
             <text class="comment-text-content">{{ item.content }}</text>
-            <!-- 评价素材图片 -->
             <view
               v-if="item.images && item.images.length"
               class="comment-images"
@@ -143,15 +137,13 @@
       </view>
     </view>
 
-    <!-- 6. 底部固定：店铺、收藏、立即兑换/立即购买按钮 -->
+    <!-- 6. 底部固定栏 -->
     <view class="footer-bar">
-      <!-- A. 店铺：点击直接跳转店铺主页 -->
       <view class="footer-icon-btn" @click="goToShop">
         <u-icon name="home" color="#64748b" size="20"></u-icon>
         <text class="icon-label">店铺</text>
       </view>
 
-      <!-- B. 收藏商品：点击高亮并收藏 -->
       <view class="footer-icon-btn" @click="toggleFavorite">
         <u-icon
           :name="isFavorited ? 'star-fill' : 'star'"
@@ -163,14 +155,33 @@
         </text>
       </view>
 
-      <!-- C. 主按钮：偶数id积分兑换，奇数id金额购买 -->
+      <!-- C. 主按钮 -->
+      <!-- 纯积分(goodsType=1): 立即兑换 -->
       <button
-        v-if="isPointsExchange"
+        v-if="goods.goodsType === 1"
         class="buy-action-btn"
         @click="handleRedeem"
       >
         立即兑换
       </button>
+      <!-- 混合(goodsType=3): 积分兑换 + 积分+现金 -->
+      <template v-else-if="goods.goodsType === 3">
+        <button
+          class="buy-action-btn"
+          style="flex: none; width: 300rpx; font-size: 28rpx"
+          @click="handleRedeem"
+        >
+          积分兑换
+        </button>
+        <button
+          class="buy-action-btn pay-btn"
+          style="flex: none; width: 300rpx; font-size: 28rpx"
+          @click="handlePurchase"
+        >
+          ¥{{ goods.cashPrice || goods.price }}
+        </button>
+      </template>
+      <!-- 纯现金(goodsType=2): 立即购买 -->
       <button v-else class="buy-action-btn pay-btn" @click="handlePurchase">
         立即购买 ¥{{ goods.cashPrice || goods.price }}
       </button>
@@ -200,6 +211,7 @@ export default {
         specs: {},
         description: "",
         shopId: null,
+        goodsType: 1,
       },
       comments: [],
     };
@@ -213,12 +225,10 @@ export default {
     }
   },
   methods: {
-    // 加载商品详情
     async fetchDetail() {
       try {
         const res = await detail2(this.goodsId);
         const d = res.data || {};
-        // 解析规格 JSON
         let specs = {};
         if (d.specs) {
           try {
@@ -242,14 +252,13 @@ export default {
           specs: specs,
           description: d.description || "",
           shopId: d.shopId,
-          goodsType: d.goodsType,
+          goodsType: d.goodsType || 1,
         };
         this.isPointsExchange = d.goodsType === 1 || d.goodsType === 3;
       } catch (e) {
         uni.showToast({ title: "加载失败", icon: "none" });
       }
     },
-    // 检查收藏状态
     async checkCollected() {
       try {
         const res = await isCollected({
@@ -270,10 +279,7 @@ export default {
     },
     async toggleFavorite() {
       try {
-        await collect({
-          targetId: this.goodsId,
-          targetType: 1,
-        });
+        await collect({ targetId: this.goodsId, targetType: 1 });
         this.isFavorited = !this.isFavorited;
         uni.showToast({
           title: this.isFavorited ? "商品收藏成功" : "已取消收藏",
@@ -288,14 +294,18 @@ export default {
         url: `/spages/store/goods/comments?id=${this.goods.id}`,
       });
     },
+    // 积分兑换 (payType=1)
     async handleRedeem() {
       if (this.userPoints < this.goods.pointsPrice) {
-        uni.showToast({ title: "爱心积分余额不足！", icon: "none" });
+        uni.showToast({ title: "积分余额不足！", icon: "none" });
         return;
       }
+      const cashText = this.goods.cashPrice
+        ? ` + ¥${this.goods.cashPrice}`
+        : "";
       uni.showModal({
         title: "确认兑换",
-        content: `确定消耗 ${this.goods.pointsPrice} 积分兑换该商品吗？`,
+        content: `确定消耗 ${this.goods.pointsPrice} 积分${cashText}兑换该商品吗？`,
         confirmColor: "#e2ab5b",
         success: async (res) => {
           if (res.confirm) {
@@ -308,14 +318,30 @@ export default {
               });
               uni.hideLoading();
               this.userPoints -= this.goods.pointsPrice;
-              const orderData = orderRes.data || {};
-              uni.showModal({
-                title: "兑换成功！",
-                content: `订单号：${orderData.orderNum || ""}\n核销码：${
-                  orderData.redeemCode || ""
-                }\n凭此核销，请至社区中心核销换取物资。`,
-                showCancel: false,
-              });
+              const d = orderRes.data || {};
+              // 混合商品如果有现金部分，调起支付
+              if (this.goods.cashPrice > 0 && d.payParams) {
+                uni.requestPayment({
+                  ...d.payParams,
+                  success: () => {
+                    uni.showToast({ title: "兑换成功", icon: "success" });
+                  },
+                  fail: () => {
+                    uni.showToast({
+                      title: "支付取消，订单已生成",
+                      icon: "none",
+                    });
+                  },
+                });
+              } else {
+                uni.showModal({
+                  title: "兑换成功！",
+                  content: `订单号：${d.orderNum || ""}\n核销码：${
+                    d.redeemCode || ""
+                  }\n凭此核销，请至社区中心核销换取物资。`,
+                  showCancel: false,
+                });
+              }
             } catch (e) {
               uni.hideLoading();
               uni.showToast({ title: "兑换失败，请重试", icon: "none" });
@@ -324,6 +350,7 @@ export default {
         },
       });
     },
+    // 现金购买 (payType=2)
     async handlePurchase() {
       const price = this.goods.cashPrice || this.goods.price;
       uni.showModal({
@@ -340,17 +367,12 @@ export default {
                 payType: 2,
               });
               uni.hideLoading();
-              const orderData = orderRes.data || {};
-              // 如果返回微信支付参数，则调起支付
-              if (orderData.payParams) {
+              const d = orderRes.data || {};
+              if (d.payParams) {
                 uni.requestPayment({
-                  ...orderData.payParams,
+                  ...d.payParams,
                   success: () => {
-                    uni.showModal({
-                      title: "购买成功！",
-                      content: "已支付，请至社区中心领取商品。",
-                      showCancel: false,
-                    });
+                    uni.showToast({ title: "支付成功", icon: "success" });
                   },
                   fail: () => {
                     uni.showToast({ title: "支付取消", icon: "none" });
@@ -360,7 +382,7 @@ export default {
                 uni.showModal({
                   title: "下单成功！",
                   content: `订单号：${
-                    orderData.orderNum || ""
+                    d.orderNum || ""
                   }，请完成支付后领取商品。`,
                   showCancel: false,
                 });
@@ -399,14 +421,10 @@ export default {
   .charity-donation-badge {
     display: flex;
     align-items: center;
-    background: linear-gradient(
-      135deg,
-      #fff9f0 0%,
-      #fff0f2 100%
-    ); // 温暖的浅粉橙色柔和渐变
-    border: 3rpx solid #ffd0d4; // 浅红细微描边
+    background: linear-gradient(135deg, #fff9f0 0%, #fff0f2 100%);
+    border: 3rpx solid #ffd0d4;
     padding: 28rpx 32rpx;
-    box-shadow: 0 8rpx 28rpx rgba(255, 77, 79, 0.06); // 暖红色爱心柔光投影
+    box-shadow: 0 8rpx 28rpx rgba(255, 77, 79, 0.06);
     box-sizing: border-box;
 
     .badge-left {
@@ -415,7 +433,6 @@ export default {
       justify-content: center;
       margin-right: 24rpx;
 
-      /* 呼吸微动特效，增强视觉瞩目度 */
       .heart-pulse-icon {
         animation: heartBeat 2s infinite ease-in-out;
       }
@@ -428,7 +445,7 @@ export default {
 
       .badge-title {
         font-weight: 800;
-        color: #b71c1c; // 温暖的深红字
+        color: #b71c1c;
         letter-spacing: 2rpx;
         margin-bottom: 8rpx;
       }
@@ -438,18 +455,16 @@ export default {
         color: #5d6d7e;
         line-height: 1.5;
 
-        /* 突出核心的 1% */
         .highlight {
           font-family: "Georgia", serif;
           font-weight: 900;
-          color: #07c160; // 微信志愿绿
+          color: #07c160;
           margin: 0 8rpx;
         }
       }
     }
   }
 
-  /* 经典爱心起伏呼吸动画 */
   @keyframes heartBeat {
     0% {
       transform: scale(1);
@@ -474,7 +489,6 @@ export default {
     gap: 14rpx;
   }
 
-  /* 定价与标题 */
   .price-title-card {
     background-color: #ffffff;
     border-radius: 28rpx;
@@ -531,7 +545,6 @@ export default {
     }
   }
 
-  /* 预算卡 */
   .points-budget-card {
     background-color: #fffbeb;
     border: 2rpx solid #fde68a;
@@ -581,7 +594,6 @@ export default {
     }
   }
 
-  /* 【新增】：商品评价卡片 */
   .comments-section-card {
     background-color: #ffffff;
     border-radius: 28rpx;
@@ -672,7 +684,6 @@ export default {
     }
   }
 
-  /* 详情介绍 */
   .description-card {
     background-color: #ffffff;
     border-radius: 28rpx;
@@ -711,7 +722,6 @@ export default {
     }
   }
 
-  /* 底部胶囊工具栏 */
   .footer-bar {
     position: fixed;
     bottom: 0;
@@ -723,7 +733,7 @@ export default {
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    gap: 40rpx;
+    gap: 20rpx;
     z-index: 100;
 
     .footer-icon-btn {
