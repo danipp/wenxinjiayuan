@@ -6,7 +6,7 @@
     </view>
 
     <!-- 2. 互助信息卡片流 -->
-    <scroll-view scroll-y class="list-scroll-view">
+    <scroll-view scroll-y class="list-scroll-view" @scrolltolower="loadMore">
       <view class="card-list" v-if="filteredList.length > 0">
         <view
           v-for="item in filteredList"
@@ -116,6 +116,7 @@
 
 <script>
 import DropdownFilter from "@/components/DropdownFilter.vue";
+import { publicPage, accept } from "@/spages/api/demand";
 
 export default {
   components: {
@@ -128,139 +129,170 @@ export default {
         requirement: "all",
         sort: "default",
       },
-      deedsList: [
-        // 1. 待帮忙状态 (活跃状态)
-        {
-          id: 101,
-          title: "上门除尘与衣物整理",
-          status: "pending",
-          statusText: "待帮忙",
-          avatar: "https://cdn.uviewui.com/uview/album/4.jpg",
-          publishDate: "刚刚发布",
-          distance: "0.8km",
-          fields: [
-            { label: "时间", value: "本周六下午 (双方协商)" },
-            { label: "地点", value: "越秀区青菜岗43号启东楼" },
-            {
-              label: "说明",
-              value:
-                "家中有高龄独居老人，平时衣物整理不便，希望能有志愿者协助除尘和简单收纳。",
-            },
-          ],
-        },
-        // 2. 帮助中状态 (进行中状态)
-        {
-          id: 102,
-          title: "陪同医院做检查与取药",
-          status: "helping",
-          statusText: "帮助中",
-          avatar: "https://cdn.uviewui.com/uview/album/5.jpg",
-          publishDate: "10分钟前发布",
-          distance: "1.2km",
-          fields: [
-            { label: "时间", value: "12-28 09:00 至 12-28 12:00" },
-            { label: "地点", value: "广州市越秀区中医医院" },
-            {
-              label: "说明",
-              value: "志愿者秉治已接单，正在前往老人住所协助。",
-            },
-          ],
-        },
-        // 3. 已完成 (终结状态)
-        {
-          id: 1,
-          title: "代买东西",
-          status: "completed",
-          statusText: "已完成",
-          avatar: "https://cdn.uviewui.com/uview/album/1.jpg",
-          publishDate: "07月01日发布",
-          distance: "",
-          fields: [
-            { label: "时间", value: "双方协商" },
-            { label: "地点", value: "海珠区 | 海心沙亚运公园" },
-            { label: "说明", value: "买艘船" },
-          ],
-        },
-        // 4. 已过期 (终结状态)
-        {
-          id: 2,
-          title: "地点位置校验",
-          status: "expired",
-          statusText: "已过期",
-          avatar: "https://cdn.uviewui.com/uview/album/2.jpg",
-          publishDate: "12月27日发布",
-          distance: "2.38km",
-          fields: [
-            { label: "时间", value: "2025年12月27日 星期六 17:15" },
-            { label: "地点", value: "启东楼-广东省广州市越秀区青菜岗43号" },
-            { label: "来源", value: "腾讯地图" },
-            { label: "机构", value: "腾讯地图" },
-            { label: "价格", value: "0.4元/次" },
-            { label: "说明", value: "请前往现场,校验该地点是否存在" },
-          ],
-        },
-      ],
+      deedsList: [],
+      page: 1,
+      pageSize: 10,
+      loading: false,
+      finished: false,
     };
   },
   computed: {
     // 动态根据筛选头过滤
     filteredList() {
-      return this.deedsList.filter((item) => {
-        if (this.filterParams.status !== "all") {
-          // 下拉筛选联动映射：
-          // 选中“已匹配” (matched) -> 对应 “帮助中” (helping)
-          if (
-            this.filterParams.status === "matched" &&
-            item.status !== "helping"
-          ) {
-            return false;
-          }
-          // 选中“已完成” (completed) -> 对应 “已完成” (completed)
-          if (
-            this.filterParams.status === "completed" &&
-            item.status !== "completed"
-          ) {
-            return false;
-          }
-        }
-        return true;
-      });
+      return this.deedsList;
     },
+  },
+  onShow() {
+    this.refresh();
   },
   methods: {
     goDetail(item) {
-      let id =
-        item.status == "pending"
-          ? 2
-          : item.status == "helping"
-          ? 3
-          : item.status == "expired"
-          ? 4
-          : 1;
       uni.navigateTo({
-        url: `/spages/deeds/detail?id=${id}`,
+        url: `/spages/deeds/detail?id=${item.id}`,
       });
     },
     // 判定是否为终结状态
     isTerminalState(status) {
-      return status === "completed" || status === "expired";
+      return (
+        status === "completed" ||
+        status === "expired" ||
+        status === "toEvaluate"
+      );
     },
     onFilterChange(e) {
-      console.log("筛选条件变更：", e);
+      this.filterParams = e;
+      this.refresh();
+    },
+    loadMore() {
+      this.getList();
+    },
+    refresh() {
+      this.page = 1;
+      this.finished = false;
+      this.deedsList = [];
+      this.getList();
+    },
+    getStatusString(statusInt) {
+      switch (statusInt) {
+        case 1:
+          return "pending";
+        case 2:
+          return "helping";
+        case 3:
+          return "toEvaluate";
+        case 4:
+          return "completed";
+        case 5:
+          return "expired";
+        default:
+          return "pending";
+      }
+    },
+    getStatusText(statusInt) {
+      switch (statusInt) {
+        case 1:
+          return "待帮忙";
+        case 2:
+          return "已接单";
+        case 3:
+          return "待评价";
+        case 4:
+          return "已完成";
+        case 5:
+          return "已过期";
+        default:
+          return "未知";
+      }
+    },
+    async getList() {
+      if (this.loading || this.finished) return;
+      this.loading = true;
+
+      let apiStatus = this.filterParams.status;
+      if (apiStatus === "matched") apiStatus = "helping";
+
+      let apiSort = "desc";
+      if (this.filterParams.sort === "asc") apiSort = "asc";
+
+      try {
+        const res = await publicPage({
+          pageNumber: this.page,
+          pageSize: this.pageSize,
+          role: 2, // 帮忙者视角
+          status: apiStatus,
+          requirement:
+            this.filterParams.requirement === "all"
+              ? ""
+              : this.filterParams.requirement,
+          sort: apiSort,
+        });
+
+        if (res.code === "00000") {
+          const list = (res.data?.content || []).map((item) => {
+            const statusStr = this.getStatusString(item.status);
+            return {
+              id: item.demandId || item.id,
+              title: item.title,
+              status: statusStr,
+              statusText: this.getStatusText(item.status),
+              avatar: "https://cdn.uviewui.com/uview/album/4.jpg", // 占位头像
+              publishDate: item.createTime || "刚刚发布",
+              distance: "",
+              phone: item.memberPhone,
+              isMine: true, // 简化处理，暂时允许联系
+              fields: [
+                { label: "时间", value: item.serviceTime || "双方协商" },
+                {
+                  label: "地点",
+                  value: item.location || item.memberAddress || "",
+                },
+                { label: "说明", value: item.content || item.remark || "" },
+              ],
+            };
+          });
+
+          if (this.page === 1) {
+            this.deedsList = list;
+          } else {
+            this.deedsList = this.deedsList.concat(list);
+          }
+
+          this.finished = res.data?.last ?? list.length < this.pageSize;
+          this.page++;
+        }
+      } catch (e) {
+        console.error("获取需求列表失败", e);
+      } finally {
+        this.loading = false;
+      }
     },
     // “我来帮忙”按钮响应
     handleApplyHelp(item) {
       uni.showModal({
         title: "确认帮助",
         content: `您确认承接“${item.title}”的互助任务吗？确认后系统将通知求助者。`,
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            uni.showToast({
-              title: "接单成功，请尽快联系求助者",
-              icon: "none",
-            });
-            item.status = "helping";
-            item.statusText = "帮助中";
+            try {
+              uni.showLoading({ title: "接单中..." });
+              const result = await accept(item.id);
+              uni.hideLoading();
+              if (result.code === "00000") {
+                uni.showToast({
+                  title: "接单成功，请尽快联系求助者",
+                  icon: "none",
+                });
+                this.refresh();
+              } else {
+                uni.showToast({
+                  title: result.msg || "接单失败",
+                  icon: "none",
+                });
+              }
+            } catch (error) {
+              uni.hideLoading();
+              uni.showToast({ title: "接单失败，请重试", icon: "none" });
+            }
           }
         },
       });

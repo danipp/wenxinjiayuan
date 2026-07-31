@@ -157,6 +157,8 @@
 </template>
 
 <script>
+import { publicDetail, accept } from "@/spages/api/demand";
+
 export default {
   data() {
     return {
@@ -173,84 +175,7 @@ export default {
         ratingLabel: "",
         remark: "",
       },
-      // 模拟 5 种业务场景数据库
-      mockDatabase: {
-        1: {
-          id: 1,
-          title: "代买东西",
-          useCount: 160,
-          rating: "99.92",
-          status: "completed",
-          statusText: "已完成",
-          publishDate: "07月01日发布",
-          time: "双方协商",
-          location: "海珠区 | 海心沙亚运公园",
-          memberCount: "1/1",
-          description: "买艘船",
-          isMine: true,
-          evaluation: {
-            rating: "satisfied",
-            ratingLabel: "满意！感谢志愿者",
-            remark: "很好",
-          },
-        },
-        5: {
-          id: 5,
-          title: "陪同复诊取药",
-          useCount: 32,
-          rating: "100.00",
-          status: "toEvaluate",
-          statusText: "待评价",
-          publishDate: "07月03日发布",
-          time: "07-05 09:00 至 07-05 11:00",
-          location: "海珠区 | 广州医科大学附属第二医院",
-          memberCount: "1/1",
-          description: "帮忙陪同老人完成复诊，并协助取药后送回家中。",
-          isMine: true,
-        },
-        2: {
-          id: 2,
-          title: "上门除尘与衣物整理",
-          useCount: 12,
-          rating: "100.00",
-          status: "pending",
-          statusText: "待帮忙",
-          publishDate: "刚刚发布",
-          time: "本周六下午 (双方协商)",
-          location: "越秀区青菜岗43号启东楼",
-          memberCount: "0/1",
-          description:
-            "家中有高龄独居老人，平时衣物整理不便，希望能有志愿者协助除尘和简单收纳。",
-        },
-        3: {
-          id: 3,
-          title: "陪同医院做检查与取药",
-          useCount: 45,
-          rating: "98.50",
-          status: "helping",
-          isMine: false,
-          statusText: "已接单", // 按照用户要求，将帮助中换为已接单
-          publishDate: "10分钟前发布",
-          time: "12-28 09:00 至 12-28 12:00",
-          location: "广州市越秀区中医医院",
-          memberCount: "1/1",
-          description:
-            "带老人去门诊大厅签到并做B超检查，随后协助窗口取药送回家中。",
-        },
-        4: {
-          id: 4,
-          title: "地点位置校验",
-          useCount: 8,
-          rating: "95.00",
-          status: "expired",
-          statusText: "已过期",
-          publishDate: "12月27日发布",
-          time: "2025年12月27日 星期六 17:15",
-          location: "启东楼-广东省广州市越秀区青菜岗43号",
-          memberCount: "0/1",
-          description: "请前往现场,校验该地点是否还存在",
-        },
-      },
+      id: null,
     };
   },
   computed: {
@@ -263,16 +188,84 @@ export default {
     },
   },
   onLoad(options) {
-    // 根据列表传进来的 id，渲染对应状态的数据，默认展示已完成 (id=1)
-    const activeId = options && options.id ? options.id : "1";
-    this.detail = this.mockDatabase[activeId] || this.mockDatabase["1"];
-
+    if (options && options.id) {
+      this.id = options.id;
+    }
     // 设置页面标题
     uni.setNavigationBarTitle({
       title: "互助详情",
     });
   },
+  onShow() {
+    if (this.id) {
+      this.getDetail();
+    }
+  },
   methods: {
+    getStatusString(statusInt) {
+      switch(statusInt) {
+        case 1: return 'pending';
+        case 2: return 'helping';
+        case 3: return 'toEvaluate';
+        case 4: return 'completed';
+        case 5: return 'expired';
+        default: return 'pending';
+      }
+    },
+    getStatusText(statusInt) {
+      switch(statusInt) {
+        case 1: return '待帮忙';
+        case 2: return '已接单';
+        case 3: return '待评价';
+        case 4: return '已完成';
+        case 5: return '已过期';
+        default: return '未知';
+      }
+    },
+    getRatingLabel(ratingNum) {
+      const map = { 1: "非常不满意", 2: "不满意", 3: "一般", 4: "满意", 5: "非常满意" };
+      return map[ratingNum] || "满意";
+    },
+    getRatingKey(ratingNum) {
+      const map = { 1: "very_unsatisfied", 2: "unsatisfied", 3: "normal", 4: "satisfied", 5: "very_satisfied" };
+      return map[ratingNum] || "satisfied";
+    },
+    async getDetail() {
+      uni.showLoading({ title: "加载中..." });
+      try {
+        const res = await publicDetail(this.id);
+        if (res.code === '00000') {
+          const item = res.data || {};
+          this.detail = {
+            id: item.demandId || item.id,
+            title: item.title,
+            useCount: 0,
+            rating: "100",
+            status: this.getStatusString(item.status),
+            statusText: this.getStatusText(item.status),
+            publishDate: item.createTime,
+            time: item.serviceTime || "双方协商",
+            location: item.location || item.memberAddress,
+            memberCount: "",
+            description: item.content || item.remark || "",
+            isMine: true, // 简化处理，暂时允许相关操作
+            phone: item.memberPhone,
+            evaluation: item.evaluateContent ? {
+              rating: this.getRatingKey(item.rating),
+              ratingLabel: this.getRatingLabel(item.rating),
+              remark: item.evaluateContent
+            } : null
+          };
+        } else {
+          uni.showToast({ title: res.msg || "获取详情失败", icon: "none" });
+        }
+      } catch (e) {
+        console.error("Failed to get detail", e);
+        uni.showToast({ title: "获取详情失败", icon: "none" });
+      } finally {
+        uni.hideLoading();
+      }
+    },
     callPhone() {
       uni.makePhoneCall({
         phoneNumber: this.detail.phone || "13800138000",
@@ -290,11 +283,22 @@ export default {
       uni.showModal({
         title: "温馨提示",
         content: "确定承接该帮扶任务吗？",
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            uni.showToast({ title: "接单成功！", icon: "success" });
-            this.detail.status = "helping";
-            this.detail.statusText = "已接单";
+            try {
+              uni.showLoading({ title: "接单中..." });
+              const result = await accept(this.detail.id);
+              uni.hideLoading();
+              if (result.code === '00000') {
+                uni.showToast({ title: "接单成功！", icon: "success" });
+                this.getDetail(); // 刷新详情数据
+              } else {
+                uni.showToast({ title: result.msg || "接单失败", icon: "none" });
+              }
+            } catch (e) {
+              uni.hideLoading();
+              uni.showToast({ title: "接单失败，请重试", icon: "none" });
+            }
           }
         },
       });
