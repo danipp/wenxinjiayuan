@@ -14,8 +14,8 @@
         <!-- 2. 数据指标横栏 -->
         <view class="status-metric-bar">
             <text class="metric-text">
-                已使用 <text class="highlight">{{ detail.usedCount }}</text> 次，共 <text class="highlight">{{
-                    detail.totalJoined }}</text> 居民参加
+                已使用 <text class="highlight">{{ detail.usedCount || 0 }}</text> 次，共 <text class="highlight">{{
+                    detail.totalJoined || 0 }}</text> 居民参加
             </text>
             <u-icon name="arrow-right" color="#a0aec0" size="14"></u-icon>
         </view>
@@ -23,7 +23,7 @@
         <!-- 3. 活动介绍区 -->
         <view class="intro-card">
             <text class="intro-title">活动介绍</text>
-            <text class="intro-body">{{ detail.content }}</text>
+            <text class="intro-body">{{ detail.content || '暂无介绍' }}</text>
         </view>
 
         <!-- 4. 底部悬浮制作同款按钮 -->
@@ -36,33 +36,46 @@
 </template>
 
 <script>
+import { detail4, use } from '@/spages/api/square'
+
 export default {
     data() {
         return {
-            detail: {
-                id: 101,
-                title: '时光AI讲堂—AI公益课进社区专题',
-                tag: 'AI时光课堂',
-                type: '线下活动',
-                participants: '25728',
-                usedCount: '2121',
-                totalJoined: '25728',
-                image: 'https://cdn.uviewui.com/uview/album/5.jpg',
-                maxLimit: 100, // 模板默认的人数限制，可用于填充同款表单
-                content: `时光AI讲堂-AI公益课进社区”在全国开展1000场以上免费AI教学活动，由青年志愿者为老年人授课。课程内容涵盖AI基础认知、智能问答、求医问诊、趣味图片生成等实用技能，注重操作实践与安全防护。课件通俗易懂，教学耐心细致，全程免费。通过代际互助，让老年人敢用、会用、爱用AI，享受智慧生活便利。`
-            }
+            templateId: null,
+            detail: {}
         };
     },
+    onLoad(options) {
+        this.templateId = options.id
+        if (this.templateId) {
+            this.fetchDetail()
+        }
+    },
     methods: {
-        // 制作同款核心跳转逻辑：带参跳回发布页面
-        handleMakeSame() {
-            const title = encodeURIComponent(this.detail.title);
-            const content = encodeURIComponent(this.detail.content);
-            const maxLimit = this.detail.maxLimit || '';
+        // 获取模板详情
+        async fetchDetail() {
+            try {
+                const res = await detail4(this.templateId)
+                this.detail = res.data || res
+            } catch (e) {
+                uni.showToast({ title: '加载失败，请重试', icon: 'none' })
+            }
+        },
+        // 制作同款：先调用 use 接口递增使用次数，再跳转
+        async handleMakeSame() {
+            try {
+                const res = await use(this.templateId)
+                const templateData = res.data || res
+                const title = encodeURIComponent(templateData.title || '');
+                const content = encodeURIComponent(templateData.content || '');
+                const maxLimit = templateData.maxLimit || '';
 
-            uni.navigateTo({
-                url: `/spages/fun/create?title=${title}&content=${content}&maxLimit=${maxLimit}`
-            });
+                uni.navigateTo({
+                    url: `/spages/fun/create?title=${title}&content=${content}&maxLimit=${maxLimit}`
+                });
+            } catch (e) {
+                uni.showToast({ title: '操作失败，请重试', icon: 'none' })
+            }
         }
     }
 };
