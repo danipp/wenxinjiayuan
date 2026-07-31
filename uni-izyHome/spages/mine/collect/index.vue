@@ -18,10 +18,10 @@
       </view>
     </view>
 
-    <!-- 2. 【组件化容器】高度自适应 -->
+    <!-- 2. 组件容器 -->
     <view class="scroll-container">
-      <CollectGoods v-if="activeTab === 0" />
-      <CollectShops v-else-if="activeTab === 1" />
+      <CollectGoods v-show="activeTab === 0" />
+      <CollectShops v-show="activeTab === 1" />
     </view>
   </view>
 </template>

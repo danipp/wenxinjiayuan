@@ -8,7 +8,7 @@ import request from '../utils/request.js'
  *   pageSize: integer, // 单页数据量，默认为20
  *   shopId: integer, // 所属店铺ID
  *   category: string, // 商品分类
- *   goodsType: integer, // 商品类型：1积分兑换 2现金购买 3混合
+ *   goodsType: integer, // 商品类型：1积分兑换 2现金购买 3混合 4打卡相框
  *   status: integer, // 商品状态：1上架中 2已下架
  *   keyword: string, // 关键词（模糊搜索商品标题）
  * }
@@ -17,12 +17,7 @@ import request from '../utils/request.js'
  * --- 响应 200 ---
  * {
  *   code: string, // 状态码 {00000：成功 | A0401：未登录 | A0403：账号冻结 | B0001 系统执行出错，错误信息msg }
- *   data: {
- *      content:[],//数据列表
- *       last:false,//是否最后一页
- *      totalElements:0,//总条数
- *    }, // 数据
-
+ *   data: Object, // 数据
  *   msg: string, // 成功/失败消息
  *   total: integer,
  * }
@@ -43,7 +38,7 @@ import request from '../utils/request.js'
  *   originalPrice: number, // 原价/参考价
  *   stock: integer, // 库存数量
  *   salesCount: integer, // 销量
- *   goodsType: integer, // 商品类型：1积分兑换 2现金购买 3混合
+ *   goodsType: integer, // 商品类型：1积分兑换 2现金购买 3混合 4打卡相框
  *   status: integer, // 商品状态：1上架中 2已下架
  *   category: string, // 商品分类
  *   specs: string, // 规格参数JSON
@@ -62,4 +57,6 @@ export function page1(data) {
         data: data || {}
     })
 }
+
+
 

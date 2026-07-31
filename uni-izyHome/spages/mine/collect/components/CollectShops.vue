@@ -46,36 +46,60 @@
 </template>
 
 <script>
+import { collections } from "@/spages/api/goods";
+
 export default {
   data() {
     return {
-      // 模拟用户收藏的店
-      shopList: [
-        {
-          id: 1001,
-          name: "石头的小店",
-          avatar: "https://cdn.uviewui.com/uview/album/1.jpg",
-          fans: "1,420",
-          sales: 580,
-        },
-        {
-          id: 1002,
-          name: "秉治的公益小铺",
-          avatar: "https://cdn.uviewui.com/uview/album/2.jpg",
-          fans: "960",
-          sales: 320,
-        },
-      ],
+      loading: false,
+      noMore: false,
+      pageNum: 1,
+      pageSize: 10,
+      shopList: [],
     };
   },
+  mounted() {
+    this.fetchList();
+  },
   methods: {
+    async fetchList() {
+      if (this.loading || this.noMore) return;
+      this.loading = true;
+      try {
+        const res = await collections({
+          targetType: 2,
+          page: this.pageNum,
+          size: this.pageSize,
+        });
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast = pageData.last !== undefined ? pageData.last : list.length < this.pageSize;
+
+        const mapped = list.map((item) => ({
+          id: item.targetId,
+          collectionId: item.collectionId,
+          name: "",
+          avatar: "",
+          fans: "0",
+          sales: 0,
+        }));
+
+        this.shopList = this.pageNum === 1 ? mapped : [...this.shopList, ...mapped];
+        this.noMore = isLast;
+        if (!isLast) this.pageNum++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
+        this.loading = false;
+      }
+    },
     goShopHome(id) {
-      uni.navigateTo({
-        url: `/spages/store/shop/index?id=${id}`,
-      });
+      uni.navigateTo({ url: `/spages/store/shop/index?shopId=${id}` });
     },
     loadMore() {
-      console.log("加载更多店铺收藏...");
+      if (!this.loading && !this.noMore) {
+        this.fetchList();
+      }
     },
   },
 };

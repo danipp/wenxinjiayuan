@@ -48,42 +48,63 @@
 </template>
 
 <script>
+import { collections } from "@/spages/api/goods";
+
 export default {
   data() {
     return {
-      // 模拟用户收藏的商品
-      goodsList: [
-        {
-          id: 301,
-          title: "志愿者定制高品质 304 不锈钢保温杯",
-          payType: "pure",
-          pointsPrice: 120,
-          cashPrice: 0,
-          sales: 241,
-          image:
-            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80",
-        },
-        {
-          id: 304,
-          title: "志愿者雨天关怀折叠定制晴雨伞",
-          payType: "mix",
-          pointsPrice: 200,
-          cashPrice: 12.0,
-          sales: 114,
-          image:
-            "https://images.unsplash.com/photo-1527786356703-4b100091cdb0?auto=format&fit=crop&w=400&q=80",
-        },
-      ],
+      loading: false,
+      noMore: false,
+      pageNum: 1,
+      pageSize: 10,
+      goodsList: [],
     };
   },
+  mounted() {
+    this.fetchList();
+  },
   methods: {
+    async fetchList() {
+      if (this.loading || this.noMore) return;
+      this.loading = true;
+      try {
+        const res = await collections({
+          targetType: 1,
+          page: this.pageNum,
+          size: this.pageSize,
+        });
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast = pageData.last !== undefined ? pageData.last : list.length < this.pageSize;
+
+        const mapped = list.map((item) => ({
+          id: item.targetId,
+          collectionId: item.collectionId,
+          // 列表只返回 collection 基本信息，商品详情需要额外加载
+          title: "",
+          payType: "pure",
+          pointsPrice: 0,
+          cashPrice: 0,
+          sales: 0,
+          image: "",
+        }));
+
+        this.goodsList = this.pageNum === 1 ? mapped : [...this.goodsList, ...mapped];
+        this.noMore = isLast;
+        if (!isLast) this.pageNum++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
+        this.loading = false;
+      }
+    },
     goGoodsDetail(id) {
-      uni.navigateTo({
-        url: `/spages/store/detail?id=${id}`,
-      });
+      uni.navigateTo({ url: `/spages/store/detail?id=${id}` });
     },
     loadMore() {
-      console.log("加载更多商品收藏...");
+      if (!this.loading && !this.noMore) {
+        this.fetchList();
+      }
     },
   },
 };
