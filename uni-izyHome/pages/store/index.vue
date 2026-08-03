@@ -1,15 +1,5 @@
 <template>
   <view class="store-master-container">
-    <!-- 1. 顶部社区选择区 (固定高度 90rpx) -->
-    <view class="top-header-bar">
-      <view class="community-pill" @click="openCommunitySelector">
-        <u-icon name="home-fill" color="#07c160" size="32rpx"></u-icon>
-        <text class="pill-text text-ellipsis">{{ currentCommunityName }}</text>
-        <u-icon name="arrow-right" color="#999999" size="20rpx"></u-icon>
-      </view>
-      <text class="store-header-tips">公益专属商店</text>
-    </view>
-
     <!-- 2. 四大核心分类 Tabs 选项卡 (固定高度 110rpx) -->
     <view class="four-tabs-header">
       <view
@@ -26,26 +16,16 @@
     <!-- 3. 四大分类子组件挂载区 (使用 v-show 避免重复请求) -->
     <view class="sub-component-viewport">
       <!-- 分类一：志愿者商城 (goodsType=3) -->
-      <PointsMall v-show="activeTab === 1" :headerHeight="200" />
+      <PointsMall v-show="activeTab === 1" :headerHeight="110" />
       <!-- 分类二：积分兑换 (goodsType=1) -->
-      <PurePoints v-show="activeTab === 2" :headerHeight="200" />
+      <PurePoints v-show="activeTab === 2" :headerHeight="110" />
       <!-- 分类三：消费帮扶（暂不接接口） -->
-      <AssistanceMall v-show="activeTab === 3" :headerHeight="200" />
+      <AssistanceMall v-show="activeTab === 3" :headerHeight="110" />
     </view>
-
-    <!-- 社区选择弹窗组件 -->
-    <CommunitySelector
-      :show.sync="showCommunitySelector"
-      title="请选择我的社区"
-      mode="select"
-      @confirm="handleCommunityChange"
-    />
   </view>
 </template>
 
 <script>
-import CommunitySelector from "@/components/community.vue";
-
 // 引入 4 大独立子组件
 import PointsMall from "./components/PointsMall.vue";
 import PurePoints from "./components/PurePoints.vue";
@@ -53,7 +33,6 @@ import AssistanceMall from "./components/AssistanceMall.vue";
 
 export default {
   components: {
-    CommunitySelector,
     PointsMall,
     PurePoints,
     AssistanceMall,
@@ -78,15 +57,6 @@ export default {
     uni.setNavigationBarTitle({ title: "公益商店" });
   },
   methods: {
-    openCommunitySelector() {
-      this.showCommunitySelector = true;
-    },
-    handleCommunityChange(data) {
-      if (data && data.community) {
-        this.currentCommunityName = data.community.name;
-        uni.setStorageSync("selected_community", data.community);
-      }
-    },
     switchTab(idx) {
       this.activeTab = idx;
     },

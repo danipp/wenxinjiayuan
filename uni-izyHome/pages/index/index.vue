@@ -263,7 +263,7 @@ export default {
     return {
       currentTab: "community",
       showPhoneAuth: false,
-      currentCommunityName: "财厅前社区",
+      currentCommunityName: "请选择社区",
       showCommunitySelector: false,
       showNfcCheckinSuccess: false,
       nfcCheckinParams: {},
