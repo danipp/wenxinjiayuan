@@ -109,27 +109,27 @@
             >
             <view class="daren-item">
               <text class="badge-tag tag-orange">@互助达人 :</text>
-              <view class="user-info">
+              <!-- <view class="user-info">
                 <image
                   class="daren-avatar"
                   src="https://cdn.uviewui.com/uview/album/1.jpg"
                   mode="aspectFill"
                 ></image>
                 <text class="daren-name">秉治</text>
-              </view>
-              <text class="desc">"帮助居民1人"</text>
+              </view> -->
+              <view class="desc">"谁会是互助小雷锋呢"</view>
             </view>
             <view class="daren-item">
               <text class="badge-tag tag-blue">@活动达人 :</text>
-              <view class="user-info">
+              <!-- <view class="user-info">
                 <image
                   class="daren-avatar"
                   src="https://cdn.uviewui.com/uview/album/2.jpg"
                   mode="aspectFill"
                 ></image>
                 <text class="daren-name">秉治</text>
-              </view>
-              <text class="desc">"参与活动1次"</text>
+              </view> -->
+              <view class="desc">"活动社交达人"</view>
             </view>
           </view>
 
