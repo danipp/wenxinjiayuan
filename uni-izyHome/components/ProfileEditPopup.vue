@@ -27,11 +27,7 @@
             open-type="chooseAvatar"
             @chooseavatar="onChooseAvatar"
           >
-            <!-- <image class="avatar-preview" :src="avatarUrl || defaultAvatar" mode="aspectFill"></image> -->
-            <u-avatar
-              :src="avatarUrl || defaultAvatar"
-              size="160rpx"
-            ></u-avatar>
+            <u-avatar :src="avatarUrl" size="160rpx"></u-avatar>
             <div class="camera-icon-badge">
               <u-icon name="camera-fill" color="#ffffff" size="12"></u-icon>
             </div>
@@ -43,7 +39,7 @@
           <div class="native-avatar-btn" @click="chooseCustomAvatar">
             <image
               class="avatar-preview"
-              :src="avatarUrl || defaultAvatar"
+              :src="avatarUrl"
               mode="aspectFill"
             ></image>
             <div class="camera-icon-badge">
