@@ -77,7 +77,6 @@
           </div>
         </div>
         <text class="empty-text">暂无记录</text>
-        <text class="pull-tips">（下拉刷新可加载模拟数据测试）</text>
       </view>
     </scroll-view>
   </view>
