@@ -2,10 +2,10 @@
   <view class="mine-container">
     <!-- 1. 顶部个人资料卡片 -->
     <view class="profile-card">
-      <!-- 社区码角标 -->
+      <!-- 家园码角标 -->
       <view class="community-code-ribbon" @click="openQrCode">
         <u-icon name="grid" color="#ffffff" size="14"></u-icon>
-        <text class="ribbon-text">核销码</text>
+        <text class="ribbon-text">家园码</text>
       </view>
 
       <!-- 基本信息（点击头像/编辑可唤起个人资料修改弹窗） -->
@@ -220,7 +220,7 @@
       @touchmove.stop.prevent
     >
       <view class="qr-popup-card">
-        <text class="qr-title">您的核销码</text>
+        <text class="qr-title">我的家园码</text>
         <!-- 纯 CSS 绘制高精度二维码 -->
         <view class="qr-code-box">
           <image
@@ -231,13 +231,13 @@
         </view>
         <view class="qr-tips-list">
           <view class="qr-tip-item">
-            <text class="qr-tip-text">1、核销时请出示核销码二维码</text>
+            <text class="qr-tip-text">1、家园码是您在社区中的唯一身份凭证</text>
           </view>
           <view class="qr-tip-item">
-            <text class="qr-tip-text">2、可长按保存二维码，长期使用</text>
+            <text class="qr-tip-text">2、参与活动时出示家园码即可快速签到</text>
           </view>
           <view class="qr-tip-item">
-            <text class="qr-tip-text">3、勿将核销码给他人，谨防财产损失</text>
+            <text class="qr-tip-text">3、可长按保存家园码，方便随时使用</text>
           </view>
         </view>
       </view>

@@ -116,7 +116,7 @@ import {
   averageScore,
 } from "@/spages/api/activity";
 import { follow, unfollow } from "@/spages/api/follow";
-
+import loginApi from "@/utils/login";
 export default {
   components: {
     PhotoViewer,
@@ -144,6 +144,7 @@ export default {
       reviewTotal: 0,
       photoList: [],
       avgScore: 0,
+      shareType: null,
     };
   },
   computed: {
@@ -209,11 +210,24 @@ export default {
   },
   onLoad(options) {
     this.activityId = options.id ? options.id : "";
+    this.shareType = options.type ? options.type : null;
+    if (this.shareType) {
+      loginApi().then((res) => {
+        this.getList();
+      });
+      return;
+    }
     this.getList();
   },
   onShow() {
     // 从写评价页返回时刷新评价列表；报名/照片通过 getList 已处理
     if (this.activityId) {
+      if (this.shareType) {
+        loginApi().then((res) => {
+          this.refreshReviews();
+        });
+        return;
+      }
       this.refreshReviews();
     }
   },
@@ -439,7 +453,7 @@ export default {
         const photoImg = res.target.dataset.photoimg;
         return {
           title: "分享一张超赞的社区活动照片给你！",
-          path: `/spages/activity/detail?id=${this.activity.id}&photoId=${photoId}`,
+          path: `/spages/activity/detail?id=${this.activity.id}&photoId=${photoId}&type=share`,
           imageUrl: photoImg,
         };
       }
