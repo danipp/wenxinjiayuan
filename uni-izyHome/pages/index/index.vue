@@ -28,7 +28,7 @@
       </swiper>
     </view>
 
-    <!-- 3. 双核核心入口（找点乐子 & 做好事） -->
+    <!-- 3. 双核核心入口 -->
     <view class="action-grid">
       <view class="action-card card-fun" @click="navigateTo('fun')">
         <view class="card-text">
@@ -44,142 +44,194 @@
       </view>
     </view>
 
-    <!-- 4. 热门推荐瀑布流区 -->
+    <!-- 4. Tab 切换 -->
     <view class="section-title-bar">
       <view class="tabs-box">
         <text
           class="tab-item"
           :class="{ active: currentTab === 'recruitment' }"
-          @click="currentTab = 'recruitment'"
+          @click="switchTab('recruitment')"
           >招募活动</text
         >
         <text
           class="tab-item"
           :class="{ active: currentTab === 'community' }"
-          @click="currentTab = 'community'"
+          @click="switchTab('community')"
           >社区活动</text
         >
       </view>
     </view>
 
-    <view class="content-flow-layout" v-if="currentTab === 'community'">
-      <!-- 左列：纯活动流 -->
-      <view class="flow-column">
+    <!-- 5. 社区活动 tab: scroll-view 瀑布流 -->
+    <scroll-view
+      v-show="currentTab === 'community'"
+      scroll-y
+      class="community-scroll"
+      refresher-enabled
+      :refresher-triggered="communityRefreshing"
+      @refresherrefresh="onCommunityRefresh"
+      @scrolltolower="onCommunityLoadMore"
+    >
+      <!-- 有数据 -->
+      <view v-if="communityList.length > 0" class="content-flow-layout">
+        <view class="flow-column">
+          <view
+            v-for="item in leftActivities"
+            :key="item.id"
+            class="activity-card"
+            @click="goDetail(item.id)"
+          >
+            <image
+              class="cover-image"
+              :src="item.coverImage"
+              mode="aspectFill"
+            ></image>
+            <view class="card-info">
+              <text class="activity-title">{{ item.title }}</text>
+              <view class="location-badge">
+                <u-icon name="map-fill" color="#999" size="12"></u-icon>
+                <text class="location-text text-ellipsis">{{
+                  item.location || "待定"
+                }}</text>
+              </view>
+              <text class="participant-info"
+                >{{ item.participantCount || 0 }}人参与</text
+              >
+            </view>
+          </view>
+        </view>
+
+        <view class="flow-column">
+          <!-- 达人榜 -->
+          <view class="daren-honor-card" @click="navigateTo('daren')">
+            <view class="card-header"
+              ><text class="header-text">🏆 志愿者达人榜</text></view
+            >
+            <view class="daren-item">
+              <text class="badge-tag tag-orange">@互助达人 :</text>
+              <view class="user-info">
+                <image
+                  class="daren-avatar"
+                  src="https://cdn.uviewui.com/uview/album/1.jpg"
+                  mode="aspectFill"
+                ></image>
+                <text class="daren-name">秉治</text>
+              </view>
+              <text class="desc">"帮助居民1人"</text>
+            </view>
+            <view class="daren-item">
+              <text class="badge-tag tag-blue">@活动达人 :</text>
+              <view class="user-info">
+                <image
+                  class="daren-avatar"
+                  src="https://cdn.uviewui.com/uview/album/2.jpg"
+                  mode="aspectFill"
+                ></image>
+                <text class="daren-name">秉治</text>
+              </view>
+              <text class="desc">"参与活动1次"</text>
+            </view>
+          </view>
+
+          <view
+            v-for="item in rightActivities"
+            :key="item.id"
+            class="activity-card"
+            @click="goDetail(item.id)"
+          >
+            <image
+              class="cover-image"
+              :src="item.coverImage"
+              mode="aspectFill"
+            ></image>
+            <view class="card-info">
+              <text class="activity-title">{{ item.title }}</text>
+              <view class="location-badge">
+                <u-icon name="map-fill" color="#999" size="12"></u-icon>
+                <text class="location-text text-ellipsis">{{
+                  item.location || "待定"
+                }}</text>
+              </view>
+              <text class="participant-info"
+                >{{ item.participantCount || 0 }}人参与</text
+              >
+            </view>
+          </view>
+        </view>
+
+        <!-- 加载状态 -->
+        <view class="load-more-tips">
+          <text v-if="communityLoading">加载中...</text>
+          <text v-else-if="communityNoMore">—— 没有更多了 ——</text>
+        </view>
+      </view>
+
+      <!-- 空数据 -->
+      <view v-else-if="!communityLoading" class="empty-state">
+        <view class="empty-icon">📋</view>
+        <text class="empty-title">暂无社区活动</text>
+        <text class="empty-sub">下拉刷新试试看</text>
+      </view>
+    </scroll-view>
+
+    <!-- 6. 招募活动 tab: scroll-view 列表 -->
+    <scroll-view
+      v-show="currentTab === 'recruitment'"
+      scroll-y
+      class="recruitment-scroll"
+      refresher-enabled
+      :refresher-triggered="recruitRefreshing"
+      @refresherrefresh="onRecruitRefresh"
+      @scrolltolower="onRecruitLoadMore"
+    >
+      <!-- 有数据 -->
+      <view v-if="recruitList.length > 0" class="recruitment-list">
         <view
-          v-for="item in leftActivities"
+          v-for="item in recruitList"
           :key="item.id"
-          class="activity-card"
+          class="recruitment-item"
           @click="goDetail(item.id)"
         >
-          <image
-            class="cover-image"
-            :src="item.image"
-            mode="aspectFill"
-          ></image>
-          <view class="card-info">
-            <text class="activity-title">{{ item.title }}</text>
-            <view class="location-badge">
-              <u-icon name="map-fill" color="#999" size="12"></u-icon>
-              <text class="location-text text-ellipsis">{{
-                item.location
-              }}</text>
-            </view>
-            <!-- 参与人头像堆叠 -->
-            <view class="user-avatars">
-              <image
-                v-for="(avatar, idx) in item.avatars.slice(0, 3)"
-                :key="idx"
-                class="avatar-item"
-                :src="avatar"
+          <image class="cover" :src="item.coverImage" mode="aspectFill"></image>
+          <view class="info">
+            <view class="title">{{ item.title }}</view>
+            <view class="desc">
+              <text class="organizer"
+                >发起方: {{ item.authorName || "社区" }}</text
               >
-              </image>
-              <view v-if="item.avatars.length > 3" class="avatar-more"
-                >+{{ item.avatars.length }}</view
+              <text
+                class="status"
+                :class="
+                  item.status === 1
+                    ? 'status-upcoming'
+                    : item.status === 2
+                    ? 'status-ongoing'
+                    : 'status-ended'
+                "
+                >{{ item.statusText || "招募中" }}</text
               >
             </view>
+            <text class="join-count"
+              >{{ item.participantCount || 0 }}人已参与</text
+            >
           </view>
+        </view>
+
+        <view class="load-more-tips">
+          <text v-if="recruitLoading">加载中...</text>
+          <text v-else-if="recruitNoMore">—— 没有更多了 ——</text>
         </view>
       </view>
 
-      <!-- 右列：荣誉榜单 + 活动混合流 -->
-      <view class="flow-column">
-        <!-- 城市达人荣誉榜卡片 -->
-        <view class="daren-honor-card" @click="navigateTo('daren')">
-          <view class="card-header">
-            <text class="header-text">🏆 志愿者达人榜</text>
-          </view>
-
-          <view class="daren-item">
-            <text class="badge-tag tag-orange">@互助达人 :</text>
-            <view class="user-info">
-              <image
-                class="daren-avatar"
-                src="https://cdn.uviewui.com/uview/album/1.jpg"
-                mode="aspectFill"
-              ></image>
-              <text class="daren-name">秉治</text>
-            </view>
-            <text class="desc">“帮助居民1人”</text>
-          </view>
-
-          <view class="daren-item">
-            <text class="badge-tag tag-blue">@活动达人 :</text>
-            <view class="user-info">
-              <image
-                class="daren-avatar"
-                src="https://cdn.uviewui.com/uview/album/2.jpg"
-                mode="aspectFill"
-              ></image>
-              <text class="daren-name">秉治</text>
-            </view>
-            <text class="desc">“参与活动1次”</text>
-          </view>
-        </view>
-        <!-- 活动卡片（原有的活动列表） -->
-        <view
-          v-for="item in rightActivities"
-          :key="item.id"
-          class="activity-card"
-          @click="navigateTo('activity', item)"
-        >
-          <image
-            class="cover-image"
-            :src="item.image"
-            mode="aspectFill"
-          ></image>
-          <view class="card-info">
-            <view class="activity-title"
-              >{{ item.title }}
-              <text class="ad-tag" v-if="item.is_ad">广告</text>
-            </view>
-            <view class="location-badge">
-              <u-icon name="map-fill" color="#999" size="12"></u-icon>
-              <text class="location-text text-ellipsis">{{
-                item.location
-              }}</text>
-            </view>
-            <view class="user-avatars">
-              <image
-                v-for="(avatar, idx) in item.avatars.slice(0, 3)"
-                :key="idx"
-                class="avatar-item"
-                :src="avatar"
-              >
-              </image>
-              <view v-if="item.avatars.length > 3" class="avatar-more"
-                >+{{ item.avatars.length }}</view
-              >
-            </view>
-          </view>
-        </view>
+      <!-- 空数据 -->
+      <view v-else-if="!recruitLoading" class="empty-state">
+        <view class="empty-icon">📋</view>
+        <text class="empty-title">暂无招募活动</text>
+        <text class="empty-sub">下拉刷新试试看</text>
       </view>
-    </view>
+    </scroll-view>
 
-    <view class="recruitment-container" v-if="currentTab === 'recruitment'">
-      <RecruitmentList @goDetail="goDetail" />
-    </view>
-
-    <!-- 底部引入我们之前封装好的社区选择弹窗组件 -->
+    <!-- 社区选择弹窗 -->
     <CommunitySelector
       :show.sync="showCommunitySelector"
       title="请选择我的社区"
@@ -193,26 +245,20 @@
       @submit-success="handleNfcSubmitSuccess"
       @close="showNfcCheckinSuccess = false"
     />
-    <!-- 手机授权弹窗 -->
     <PhoneAuthPopup :show.sync="showPhoneAuth" />
   </view>
 </template>
 
 <script>
-// 引入您此前封装好的社区选择器组件
 import CommunitySelector from "@/components/community.vue";
 import NfcCheckinSuccess from "./components/NfcCheckinSuccess.vue";
 import PhoneAuthPopup from "@/components/PhoneAuthPopup.vue";
-import RecruitmentList from "./components/RecruitmentList.vue";
 import loginApi from "@/utils/login.js";
 import { create4 } from "@/api/index";
+import { square } from "@/spages/api/activity";
+
 export default {
-  components: {
-    CommunitySelector,
-    PhoneAuthPopup,
-    NfcCheckinSuccess,
-    RecruitmentList,
-  },
+  components: { CommunitySelector, PhoneAuthPopup, NfcCheckinSuccess },
   data() {
     return {
       currentTab: "community",
@@ -221,10 +267,21 @@ export default {
       showCommunitySelector: false,
       showNfcCheckinSuccess: false,
       nfcCheckinParams: {},
-      // 广告配置
-      adLoaded: false,
-      adData: null,
-      // 轮播动态面板数据
+      // 社区活动
+      communityList: [],
+      communityPage: 1,
+      communityPageSize: 10,
+      communityLoading: false,
+      communityNoMore: false,
+      communityRefreshing: false,
+      // 招募活动
+      recruitList: [],
+      recruitPage: 1,
+      recruitPageSize: 10,
+      recruitLoading: false,
+      recruitNoMore: false,
+      recruitRefreshing: false,
+      // 轮播
       noticeList: [
         {
           avatar: "https://cdn.uviewui.com/uview/album/5.jpg",
@@ -245,63 +302,14 @@ export default {
           date: "08月18日",
         },
       ],
-      // 社区活动列表数据
-      activities: [
-        {
-          id: 1,
-          title: "巧手绕红心 同心颂党恩",
-          image: "https://cdn.uviewui.com/uview/album/3.jpg",
-          location: "苏州市金谷村",
-          avatars: [
-            "https://cdn.uviewui.com/uview/album/1.jpg",
-            "https://cdn.uviewui.com/uview/album/2.jpg",
-            "https://cdn.uviewui.com/uview/album/3.jpg",
-            "https://cdn.uviewui.com/uview/album/4.jpg",
-          ],
-        },
-        {
-          id: 4,
-          title: "绿水青山就是金山银山：垃圾分类，从我做起！",
-          is_ad: true,
-          image: "https://cdn.uviewui.com/uview/album/2.jpg",
-          location: "苏州市香山花园",
-          avatars: [
-            "https://cdn.uviewui.com/uview/album/2.jpg",
-            "https://cdn.uviewui.com/uview/album/4.jpg",
-          ],
-        },
-        {
-          id: 2,
-          title: "“光荣在党50年”勋章颁发仪式",
-          image: "https://cdn.uviewui.com/uview/album/4.jpg",
-          location: "苏州市目澜社区",
-          avatars: [
-            "https://cdn.uviewui.com/uview/album/5.jpg",
-            "https://cdn.uviewui.com/uview/album/6.jpg",
-            "https://cdn.uviewui.com/uview/album/7.jpg",
-          ],
-        },
-        {
-          id: 3,
-          title: "邻里守望，公园活动第三十六集",
-          image: "https://cdn.uviewui.com/uview/album/8.jpg",
-          location: "苏州市香山花园",
-          avatars: [
-            "https://cdn.uviewui.com/uview/album/2.jpg",
-            "https://cdn.uviewui.com/uview/album/4.jpg",
-          ],
-        },
-      ],
     };
   },
   computed: {
-    // 数据分配：非对称两栏，左边展示第1、3个活动
     leftActivities() {
-      return this.activities.filter((_, index) => index % 2 === 0);
+      return this.communityList.filter((_, i) => i % 2 === 0);
     },
-    // 右边除去荣誉卡片外，展示第2个活动
     rightActivities() {
-      return this.activities.filter((_, index) => index % 2 !== 0);
+      return this.communityList.filter((_, i) => i % 2 !== 0);
     },
   },
   onLoad(options) {
@@ -312,16 +320,131 @@ export default {
         this.create4(this.nfcCheckinParams);
       }
     });
+    this.fetchCommunityList();
+    this.fetchRecruitList();
   },
   onShow() {
-    // 首次载入时，如果本地缓存存在已有社区，则进行渲染
     const cachedLocation = uni.getStorageSync("selected_community");
     if (cachedLocation && cachedLocation.name) {
       this.currentCommunityName = cachedLocation.name;
     }
   },
   methods: {
-    // 创建打卡记录
+    // ==================== 社区活动 ====================
+    async fetchCommunityList() {
+      if (this.communityLoading || this.communityNoMore) return;
+      this.communityLoading = true;
+      try {
+        const res = await square({
+          pageNumber: this.communityPage,
+          pageSize: this.communityPageSize,
+          type: 2,
+        });
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast =
+          pageData.last !== undefined
+            ? pageData.last
+            : list.length < this.communityPageSize;
+
+        const mapped = list.map((item) => ({
+          id: item.activityId || item.id,
+          title: item.title || "",
+          coverImage: item.coverImage || "",
+          location: item.location || "",
+          participantCount: item.participantCount || 0,
+          startTime: item.startTime || "",
+          endTime: item.endTime || "",
+          status: item.status,
+          statusText: item.statusText || "",
+          authorName: item.authorName || "",
+          authorAvatar: item.authorAvatar || "",
+          tag: item.tag || "",
+        }));
+
+        this.communityList =
+          this.communityPage === 1
+            ? mapped
+            : [...this.communityList, ...mapped];
+        this.communityNoMore = isLast;
+        if (!isLast) this.communityPage++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
+        this.communityLoading = false;
+        this.communityRefreshing = false;
+      }
+    },
+    onCommunityRefresh() {
+      this.communityRefreshing = true;
+      this.communityPage = 1;
+      this.communityNoMore = false;
+      this.communityList = [];
+      this.fetchCommunityList();
+    },
+    onCommunityLoadMore() {
+      if (!this.communityLoading && !this.communityNoMore) {
+        this.fetchCommunityList();
+      }
+    },
+
+    // ==================== 招募活动 ====================
+    async fetchRecruitList() {
+      if (this.recruitLoading || this.recruitNoMore) return;
+      this.recruitLoading = true;
+      try {
+        const res = await square({
+          pageNumber: this.recruitPage,
+          pageSize: this.recruitPageSize,
+          type: 3,
+        });
+        const pageData = res.data || {};
+        const list = pageData.content || [];
+        const isLast =
+          pageData.last !== undefined
+            ? pageData.last
+            : list.length < this.recruitPageSize;
+
+        const mapped = list.map((item) => ({
+          id: item.activityId || item.id,
+          title: item.title || "",
+          coverImage: item.coverImage || "",
+          location: item.location || "",
+          participantCount: item.participantCount || 0,
+          status: item.status,
+          statusText: item.statusText || "",
+          authorName: item.authorName || "",
+          authorAvatar: item.authorAvatar || "",
+        }));
+
+        this.recruitList =
+          this.recruitPage === 1 ? mapped : [...this.recruitList, ...mapped];
+        this.recruitNoMore = isLast;
+        if (!isLast) this.recruitPage++;
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
+        this.recruitLoading = false;
+        this.recruitRefreshing = false;
+      }
+    },
+    onRecruitRefresh() {
+      this.recruitRefreshing = true;
+      this.recruitPage = 1;
+      this.recruitNoMore = false;
+      this.recruitList = [];
+      this.fetchRecruitList();
+    },
+    onRecruitLoadMore() {
+      if (!this.recruitLoading && !this.recruitNoMore) {
+        this.fetchRecruitList();
+      }
+    },
+
+    switchTab(tab) {
+      this.currentTab = tab;
+    },
+
     create4(options) {
       create4(options).then((res) => {
         this.showNfcCheckinSuccess = true;
@@ -340,9 +463,6 @@ export default {
       const cachedLocation = uni.getStorageSync("selected_community");
       return {
         frameNo: options.frameId || "",
-        // cardId: options.cardId || "",
-        // nfcId: options.nfcId || "",
-        // checkinId: options.checkinId || "",
         frameName: options.frameName || "",
         frameImage: options.frameImage || "",
         location: cachedLocation.name ? cachedLocation.name : "",
@@ -352,35 +472,10 @@ export default {
     handleNfcSubmitSuccess(params) {
       console.log("NFC打卡提交成功：", params);
     },
-    // 模拟加载广告
-    loadAd() {
-      setTimeout(() => {
-        this.adData = {
-          id: 10001,
-          title: "绿水青山就是金山银山：垃圾分类，从我做起！",
-          image: "https://cdn.uviewui.com/uview/album/2.jpg",
-          location: "市政环保倡议宣传",
-          avatars: [
-            "https://cdn.uviewui.com/uview/album/5.jpg",
-            "https://cdn.uviewui.com/uview/album/6.jpg",
-            "https://cdn.uviewui.com/uview/album/7.jpg",
-          ],
-        };
-        this.adLoaded = true;
-      }, 500);
-    },
-    // 点击广告逻辑
-    handleAdClick() {
-      uni.showToast({
-        title: "感谢关注公益宣传！",
-        icon: "none",
-      });
-    },
-    // 开启社区切换弹窗
+    loadAd() {},
     openCommunitySelector() {
       this.showCommunitySelector = true;
     },
-    // 接收社区选择器的更改回调
     handleCommunityChange(data) {
       if (data && data.community) {
         this.currentCommunityName = data.community.name;
@@ -396,44 +491,34 @@ export default {
         this.showPhoneAuth = true;
         return;
       }
-      uni.navigateTo({
-        url: `/spages/activity/detail?id=${id}`,
-      });
+      uni.navigateTo({ url: `/spages/activity/detail?id=${id}` });
     },
-    // 集中式页面路由跳转逻辑
     navigateTo(type, item) {
       if (item && item.is_ad) {
-        uni.showToast({
-          title: "感谢关注公益广告",
-          icon: "none",
-        });
+        uni.showToast({ title: "感谢关注公益广告", icon: "none" });
         return;
       }
       let url = "";
       switch (type) {
-        case "fun": // 跳转到 “找点乐子” 分包页面
+        case "fun":
           url = "/spages/fun/index";
           break;
-        case "deeds": // 跳转到 “做好事” 分包页面
+        case "deeds":
           url = "/spages/deeds/index";
           break;
-        case "daren": // 跳转到 “志愿者达人详情/榜单” 分包页面
+        case "daren":
           url = "/spages/daren/index";
           break;
-        case "activity": // 跳转到 “活动详情” 分包页面
+        case "activity":
           url = `/spages/activity/detail?id=${item.id}`;
           break;
       }
-
-      if (url) {
-        uni.navigateTo({
-          url: url,
-        });
-      }
+      if (url) uni.navigateTo({ url });
     },
   },
 };
 </script>
+
 <style lang="scss" scoped>
 .home-container {
   min-height: 100vh;
@@ -441,13 +526,11 @@ export default {
   padding: 32rpx 32rpx calc(48rpx + env(safe-area-inset-bottom)) 32rpx;
   box-sizing: border-box;
 
-  /* 1. 自定义头部 */
   .header-section {
     display: flex;
     flex-direction: column;
     margin-bottom: 32rpx;
     padding-top: 20rpx;
-
     .brand-title {
       font-size: 44rpx;
       font-weight: 800;
@@ -455,7 +538,6 @@ export default {
       letter-spacing: 1rpx;
       margin-bottom: 12rpx;
     }
-
     .community-selector {
       display: inline-flex;
       align-items: center;
@@ -465,13 +547,11 @@ export default {
       border-radius: 40rpx;
       width: fit-content;
       box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
-
       .community-name {
         font-size: 28rpx;
         font-weight: 600;
         color: #2d3748;
       }
-
       .switch-btn {
         font-size: 22rpx;
         color: #4a5568;
@@ -483,7 +563,6 @@ export default {
     }
   }
 
-  /* 2. 上下滚动通知面板 */
   .notice-swiper-bar {
     display: flex;
     align-items: center;
@@ -493,18 +572,15 @@ export default {
     height: 80rpx;
     margin-bottom: 32rpx;
     box-sizing: border-box;
-
     .notice-swiper {
       flex: 1;
       height: 100%;
       margin-left: 16rpx;
-
       .swiper-item {
         display: flex;
         align-items: center;
         font-size: 26rpx;
         color: #2d3748;
-
         .avatar {
           width: 44rpx;
           height: 44rpx;
@@ -512,25 +588,21 @@ export default {
           margin-right: 16rpx;
           border: 2rpx solid #fff;
         }
-
         .nickname {
           font-weight: 600;
           color: #2d3748;
           margin-right: 8rpx;
         }
-
         .action {
           color: #718096;
           margin-right: 12rpx;
         }
-
         .task {
           flex: 1;
           color: #07c160;
           font-weight: 700;
           max-width: 280rpx;
         }
-
         .time {
           font-size: 24rpx;
           color: #a0aec0;
@@ -540,12 +612,10 @@ export default {
     }
   }
 
-  /* 3. 双动作入口（找点乐子 / 做好事） */
   .action-grid {
     display: flex;
     gap: 24rpx;
     margin-bottom: 48rpx;
-
     .action-card {
       flex: 1;
       height: 180rpx;
@@ -557,55 +627,38 @@ export default {
       align-items: center;
       box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.04);
       transition: transform 0.15s ease;
-
       &:active {
         transform: scale(0.98);
       }
-
       .card-text {
         display: flex;
         flex-direction: column;
-
         .main-title {
           font-size: 36rpx;
           font-weight: 800;
-          color: #ffffff;
+          color: #fff;
           margin-bottom: 8rpx;
         }
-
         .sub-title {
           font-size: 22rpx;
           color: rgba(255, 255, 255, 0.85);
         }
       }
-
-      .card-icon {
-        width: 76rpx;
-        height: 76rpx;
-        opacity: 0.9;
-      }
-
-      // 找点乐子：元气暖橙色渐变
       &.card-fun {
         background: linear-gradient(135deg, #ff9944 0%, #ff6f22 100%);
       }
-
-      // 做好事：温暖志愿绿渐变
       &.card-deeds {
         background: linear-gradient(135deg, #13d682 0%, #07b160 100%);
       }
     }
   }
 
-  /* 4. 标题栏 */
   .section-title-bar {
     margin-bottom: 24rpx;
-
     .tabs-box {
       display: flex;
       align-items: center;
       gap: 32rpx;
-
       .tab-item {
         font-size: 32rpx;
         color: #718096;
@@ -613,12 +666,10 @@ export default {
         position: relative;
         padding-bottom: 8rpx;
         transition: all 0.2s;
-
         &.active {
           font-size: 36rpx;
           color: #1a202c;
           font-weight: 800;
-
           &::after {
             content: "";
             position: absolute;
@@ -635,11 +686,16 @@ export default {
     }
   }
 
-  /* 5. 非对称网格流动布局 */
+  /* scroll-view 占满剩余高度 */
+  .community-scroll,
+  .recruitment-scroll {
+    height: calc(100vh - 620rpx);
+  }
+
+  /* 社区活动瀑布流 */
   .content-flow-layout {
     display: flex;
     gap: 24rpx;
-
     .flow-column {
       flex: 1;
       display: flex;
@@ -647,31 +703,25 @@ export default {
       gap: 24rpx;
     }
 
-    // 达人卡片（采用优雅的高光浅橙质感）
     .daren-honor-card {
-      background: linear-gradient(180deg, #fffcf3 0%, #ffffff 100%);
+      background: linear-gradient(180deg, #fffcf3 0%, #fff 100%);
       border: 2rpx solid #fce7c8;
       border-radius: 32rpx;
       padding: 32rpx 28rpx;
       box-shadow: 0 8rpx 24rpx rgba(251, 191, 36, 0.05);
-
       .card-header {
         margin-bottom: 28rpx;
-
         .header-text {
           font-size: 30rpx;
           font-weight: 800;
           color: #b75e12;
         }
       }
-
       .daren-item {
         margin-bottom: 24rpx;
-
         &:last-child {
           margin-bottom: 0;
         }
-
         .badge-tag {
           font-size: 22rpx;
           font-weight: 700;
@@ -679,37 +729,31 @@ export default {
           border-radius: 12rpx;
           display: inline-block;
           margin-bottom: 12rpx;
-
           &.tag-orange {
             background-color: #fff0db;
             color: #d97706;
           }
-
           &.tag-blue {
             background-color: #e0f2fe;
             color: #0284c7;
           }
         }
-
         .user-info {
           display: flex;
           align-items: center;
           margin-bottom: 8rpx;
-
           .daren-avatar {
             width: 40rpx;
             height: 40rpx;
             border-radius: 50%;
             margin-right: 12rpx;
           }
-
           .daren-name {
             font-size: 26rpx;
             font-weight: 700;
             color: #2d3748;
           }
         }
-
         .desc {
           font-size: 24rpx;
           color: #4a5568;
@@ -718,51 +762,33 @@ export default {
       }
     }
 
-    // 活动基础卡片
     .activity-card {
-      background-color: #ffffff;
+      background-color: #fff;
       border-radius: 32rpx;
       overflow: hidden;
       box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.03);
       display: flex;
       flex-direction: column;
-
       .cover-image {
         width: 100%;
         height: 240rpx;
         background-color: #edf2f7;
       }
-
       .card-info {
         padding: 24rpx;
         display: flex;
         flex-direction: column;
-
         .activity-title {
           font-size: 28rpx;
           font-weight: 700;
           color: #1a202c;
           line-height: 1.4;
           margin-bottom: 16rpx;
-
-          .ad-tag {
-            font-size: 18rpx;
-            color: #a0aec0;
-            border: 2rpx solid #cbd5e0;
-            border-radius: 6rpx;
-            padding: 0 8rpx;
-            margin-left: 12rpx;
-            font-weight: normal;
-            display: inline-block;
-            vertical-align: middle;
-          }
         }
-
         .location-badge {
           display: flex;
           align-items: center;
-          margin-bottom: 16rpx;
-
+          margin-bottom: 12rpx;
           .location-text {
             font-size: 22rpx;
             color: #718096;
@@ -770,38 +796,112 @@ export default {
             max-width: 240rpx;
           }
         }
-
-        // 头像堆叠样式
-        .user-avatars {
-          display: flex;
-          align-items: center;
-
-          .avatar-item {
-            width: 36rpx;
-            height: 36rpx;
-            border-radius: 50%;
-            border: 2rpx solid #ffffff;
-            margin-right: -12rpx;
-
-            &:last-child {
-              margin-right: 0;
-            }
-          }
-
-          .avatar-more {
-            font-size: 20rpx;
-            color: #718096;
-            background-color: #edf2f7;
-            border-radius: 20rpx;
-            padding: 4rpx 12rpx;
-            margin-left: 20rpx;
-          }
+        .participant-info {
+          font-size: 22rpx;
+          color: #94a3b8;
         }
       }
     }
   }
 
-  /* 基础工具：单行截断 */
+  /* 招募活动列表 */
+  .recruitment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24rpx;
+    .recruitment-item {
+      display: flex;
+      background-color: #fff;
+      border-radius: 24rpx;
+      padding: 24rpx;
+      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
+      .cover {
+        width: 160rpx;
+        height: 160rpx;
+        border-radius: 16rpx;
+        margin-right: 24rpx;
+        background-color: #f7f9fb;
+      }
+      .info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        .title {
+          font-size: 30rpx;
+          font-weight: 700;
+          color: #1a202c;
+        }
+        .desc {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 24rpx;
+          .organizer {
+            color: #718096;
+          }
+          .status {
+            padding: 4rpx 12rpx;
+            border-radius: 8rpx;
+            &.status-upcoming {
+              color: #0284c7;
+              background-color: #e0f2fe;
+            }
+            &.status-ongoing {
+              color: #07c160;
+              background-color: #e6f9f0;
+            }
+            &.status-ended {
+              color: #94a3b8;
+              background-color: #f1f5f9;
+            }
+          }
+        }
+        .join-count {
+          font-size: 22rpx;
+          color: #94a3b8;
+        }
+      }
+    }
+  }
+
+  .load-more-tips {
+    text-align: center;
+    padding: 24rpx 0;
+    font-size: 24rpx;
+    color: #a0aec0;
+  }
+
+  /* 空状态 */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 200rpx;
+    .empty-icon {
+      width: 128rpx;
+      height: 128rpx;
+      border-radius: 40rpx;
+      background-color: #f0faf5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60rpx;
+      margin-bottom: 28rpx;
+    }
+    .empty-title {
+      font-size: 28rpx;
+      color: #718096;
+      font-weight: bold;
+    }
+    .empty-sub {
+      font-size: 22rpx;
+      color: #cbd5e1;
+      margin-top: 12rpx;
+    }
+  }
+
   .text-ellipsis {
     overflow: hidden;
     text-overflow: ellipsis;

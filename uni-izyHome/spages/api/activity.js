@@ -477,7 +477,7 @@ export function signup(activityId) {
  *   pageSize: integer, // 单页数据量，默认为20
  *   sort: string, // 排序方式：new按创建时间排序, use按参与人数排序, user按参与人数排序
  *   range: string, // 参与人数范围筛选：0-50/50-100/100+
- *   type: integer, // 活动类型筛选：1线上活动 2线下活动
+ *   type: integer, // 活动类型筛选：1线上活动 2线下活动 3招募活动
  * }
  *
  * 返回参数 (Response):
