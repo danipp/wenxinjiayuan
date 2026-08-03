@@ -274,6 +274,12 @@
           "style": {
             "navigationBarTitleText": "物资申领"
           }
+        },
+        {
+          "path": "result/index",
+          "style": {
+            "navigationBarTitleText": "支付结果"
+          }
         }
       ]
     }
