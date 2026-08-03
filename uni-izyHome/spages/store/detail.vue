@@ -317,6 +317,11 @@ export default {
                   ...d.payParams,
                   success: () => {
                     uni.showToast({ title: "兑换成功", icon: "success" });
+                    setTimeout(() => {
+                      uni.navigateTo({
+                        url: "/spages/result/index",
+                      });
+                    }, 800);
                   },
                   fail: () => {
                     uni.showToast({
@@ -332,6 +337,11 @@ export default {
                     d.redeemCode || ""
                   }\n凭此核销，请至社区中心核销换取物资。`,
                   showCancel: false,
+                  success: () => {
+                    uni.navigateTo({
+                      url: "/spages/result/index",
+                    });
+                  },
                 });
               }
             } catch (e) {

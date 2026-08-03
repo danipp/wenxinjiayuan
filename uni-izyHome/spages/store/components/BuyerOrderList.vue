@@ -9,7 +9,12 @@
       @scrolltolower="loadMore"
     >
       <view class="card-list" v-if="filteredList.length > 0">
-        <view v-for="order in filteredList" :key="order.id" class="order-card">
+        <view
+          v-for="order in filteredList"
+          :key="order.id"
+          class="order-card"
+          @click="goDetail(order.id)"
+        >
           <view class="card-header">
             <text class="order-num">订单号：{{ order.orderNum }}</text>
             <text class="status-text" :class="order.statusCls">{{
@@ -37,13 +42,13 @@
             <template v-if="order.status === 10">
               <button
                 class="footer-btn btn-cancel"
-                @click="handleCancel(order)"
+                @click.stop="handleCancel(order)"
               >
                 取消订单
               </button>
               <button
                 class="footer-btn btn-primary-solid"
-                @click="handlePay(order)"
+                @click.stop="handlePay(order)"
               >
                 去支付
               </button>
@@ -53,13 +58,13 @@
             <template v-else-if="order.status === 20">
               <button
                 class="footer-btn btn-primary-border"
-                @click="showRedeemCode(order)"
+                @click.stop="showRedeemCode(order)"
               >
                 查看兑换码
               </button>
               <button
                 class="footer-btn btn-cancel"
-                @click="handleRefund(order)"
+                @click.stop="handleRefund(order)"
               >
                 申请退款
               </button>
@@ -69,7 +74,7 @@
             <button
               v-else-if="order.status === 30 && !order.commentId"
               class="footer-btn btn-primary-solid"
-              @click="goWriteReview(order)"
+              @click.stop="goWriteReview(order)"
             >
               去评价
             </button>
@@ -116,11 +121,11 @@
         <text class="popup-title">请出示兑换码给社区管理员</text>
         <text class="popup-community">📍 财厅前社区志愿者中心</text>
         <view class="barcode-container">
-          <view class="barcode-bars">
+          <!-- <view class="barcode-bars">
             <span class="bar w2"></span><span class="bar w1"></span
             ><span class="bar w3"></span> <span class="bar w1"></span
             ><span class="bar w2"></span><span class="bar w4"></span>
-          </view>
+          </view> -->
           <text class="barcode-num">{{ activeOrder.redeemCode }}</text>
         </view>
         <text class="popup-tips">核销成功后即可领取对应商品，严防截图外泄</text>
@@ -141,8 +146,10 @@
       <view class="refund-popup">
         <view class="refund-title">申请退款</view>
         <view class="refund-goods-info">
-          <text class="refund-goods-title">{{ refundOrder.title || '' }}</text>
-          <text class="refund-goods-price">{{ refundOrder.priceText || '' }}</text>
+          <text class="refund-goods-title">{{ refundOrder.title || "" }}</text>
+          <text class="refund-goods-price">{{
+            refundOrder.priceText || ""
+          }}</text>
         </view>
         <view class="refund-form">
           <text class="refund-label">退款原因</text>
@@ -154,7 +161,9 @@
           />
         </view>
         <view class="refund-footer">
-          <button class="refund-btn-cancel" @click="refundPopupShow = false">取消</button>
+          <button class="refund-btn-cancel" @click="refundPopupShow = false">
+            取消
+          </button>
           <button class="refund-btn-submit" @click="doRefund">提交申请</button>
         </view>
       </view>
@@ -192,9 +201,13 @@ export default {
       noMore: false,
       refundPopupShow: false,
       refundOrder: {},
-      refundReason: '',
+      refundReason: "",
       pageSize: 10,
       buyerOrders: [],
+      codePopupShow: false,
+      activeOrder: {
+        redeemCode: "",
+      },
     };
   },
   computed: {
@@ -280,15 +293,21 @@ export default {
         this.isRefreshing = false;
       }
     },
+    goDetail(id) {
+      uni.navigateTo({
+        url: `/spages/store/order/detail?id=${id}&type=buy`,
+      });
+    },
     async showRedeemCode(order) {
       try {
         const res = await getRedeemCode(order.id);
-        const code = res.data || order.redeemCode || "";
+        const code = res.data || "";
         this.activeOrder = { ...order, redeemCode: code };
+        this.codePopupShow = true;
+        console.log("123qqqq");
       } catch (e) {
         this.activeOrder = order;
       }
-      this.codePopupShow = true;
     },
     goWriteReview(order) {
       const encodedTitle = encodeURIComponent(order.title);
@@ -329,7 +348,7 @@ export default {
     // 买家申请退款
     handleRefund(order) {
       this.refundOrder = order;
-      this.refundReason = '';
+      this.refundReason = "";
       this.refundPopupShow = true;
     },
     async doRefund() {
@@ -338,10 +357,10 @@ export default {
       this.refundPopupShow = false;
       try {
         await refund({ orderId, reason: this.refundReason.trim() });
-        uni.showToast({ title: '退款申请已提交', icon: 'success' });
+        uni.showToast({ title: "退款申请已提交", icon: "success" });
         this.onRefresh();
       } catch (e) {
-        uni.showToast({ title: '申请失败，请重试', icon: 'none' });
+        uni.showToast({ title: "申请失败，请重试", icon: "none" });
       }
     },
     // 去支付
@@ -350,6 +369,7 @@ export default {
       if (order.payParams) {
         uni.requestPayment({
           ...order.payParams,
+          package: order.payParams.packageValue,
           success: () => {
             uni.showToast({ title: "支付成功", icon: "success" });
             this.onRefresh();
@@ -433,7 +453,9 @@ export default {
       border-radius: 40rpx;
       border: none;
       padding: 0;
-      &::after { border: none; }
+      &::after {
+        border: none;
+      }
     }
 
     .refund-btn-cancel {

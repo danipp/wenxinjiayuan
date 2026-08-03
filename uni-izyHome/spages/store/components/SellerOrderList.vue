@@ -9,7 +9,12 @@
       @scrolltolower="loadMore"
     >
       <view class="card-list" v-if="filteredList.length > 0">
-        <view v-for="order in filteredList" :key="order.id" class="order-card">
+        <view
+          v-for="order in filteredList"
+          :key="order.id"
+          class="order-card"
+          @click="goDetail(order.id)"
+        >
           <view class="card-header">
             <text class="order-num">订单号：{{ order.orderNum }}</text>
             <text class="status-text" :class="order.statusCls">
@@ -37,7 +42,7 @@
             <button
               v-if="order.status === 20"
               class="footer-btn btn-primary-solid"
-              @click="handleVerifyOrder(order)"
+              @click.stop="handleVerifyOrder(order)"
             >
               核销订单
             </button>
@@ -52,13 +57,13 @@
             >
               <button
                 class="footer-btn btn-primary-solid"
-                @click="handleApproveRefund(order)"
+                @click.stop="handleApproveRefund(order)"
               >
                 同意退款
               </button>
               <button
                 class="footer-btn btn-deny"
-                @click="handleRejectRefund(order)"
+                @click.stop="handleRejectRefund(order)"
               >
                 拒绝退款
               </button>
@@ -187,6 +192,11 @@ export default {
         this.loading = false;
         this.isRefreshing = false;
       }
+    },
+    goDetail(id) {
+      uni.navigateTo({
+        url: `/spages/store/order/detail?id=${id}&type=sell`,
+      });
     },
     // 卖家核销
     async handleVerifyOrder(order) {

@@ -188,6 +188,11 @@ export default {
             success: () => {
               uni.showToast({ title: "支付成功", icon: "success" });
               this.showFrameDetail = false;
+              setTimeout(() => {
+                uni.navigateTo({
+                  url: "/spages/result/index",
+                });
+              }, 800);
             },
             fail: () => {
               uni.showToast({ title: "支付取消", icon: "none" });
