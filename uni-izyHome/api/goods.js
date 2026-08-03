@@ -10,6 +10,7 @@ import request from '../utils/request.js'
  *   category: string, // 商品分类
  *   goodsType: integer, // 商品类型：1积分兑换 2现金购买 3混合 4打卡相框
  *   status: integer, // 商品状态：1上架中 2已下架
+ * scene: ""
  *   keyword: string, // 关键词（模糊搜索商品标题）
  * }
  *
