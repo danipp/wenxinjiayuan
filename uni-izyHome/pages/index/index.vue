@@ -158,12 +158,6 @@
             </view>
           </view>
         </view>
-
-        <!-- 加载状态 -->
-        <view class="load-more-tips">
-          <text v-if="communityLoading">加载中...</text>
-          <text v-else-if="communityNoMore">—— 没有更多了 ——</text>
-        </view>
       </view>
 
       <!-- 空数据 -->
@@ -171,6 +165,11 @@
         <view class="empty-icon">📋</view>
         <text class="empty-title">暂无社区活动</text>
         <text class="empty-sub">下拉刷新试试看</text>
+      </view>
+      <!-- 加载状态 -->
+      <view class="load-more-tips">
+        <text v-if="communityLoading">加载中...</text>
+        <text v-else-if="communityNoMore">—— 没有更多了 ——</text>
       </view>
     </scroll-view>
 
@@ -681,7 +680,7 @@ export default {
   /* scroll-view 占满剩余高度 */
   .community-scroll,
   .recruitment-scroll {
-    height: calc(100vh - 620rpx);
+    height: calc(100vh - 520rpx);
   }
 
   /* 社区活动瀑布流 */

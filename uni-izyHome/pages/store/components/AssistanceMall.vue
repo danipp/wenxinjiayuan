@@ -1,76 +1,7 @@
 <template>
   <view class="container">
-    <!-- 顶部轮播图 -->
-    <view class="banner-box">
-      <u-swiper
-        :list="bannerList"
-        keyName="image"
-        height="380rpx"
-        circular
-        indicator
-        indicatorActiveColor="#FF4242"
-        radius="16rpx"
-      ></u-swiper>
-    </view>
-
-    <!-- 广播通知栏 -->
-    <view class="notice-box">
-      <u-notice-bar
-        :text="noticeText"
-        icon="volume"
-        color="#333333"
-        bgColor="#FFFFFF"
-        fontSize="26rpx"
-      ></u-notice-bar>
-    </view>
-
-    <!-- 4个统计卡片网格 -->
-    <view class="stats-grid">
-      <view class="stat-card bg-green">
-        <text class="title">爱心联盟商家</text>
-        <view class="num-wrap">
-          <text class="num">74</text>
-          <text class="unit">家</text>
-        </view>
-      </view>
-      <view class="stat-card bg-blue">
-        <text class="title">社区慈善超市</text>
-        <view class="num-wrap">
-          <text class="num">11</text>
-          <text class="unit">家</text>
-        </view>
-      </view>
-      <view class="stat-card bg-light-blue">
-        <text class="title">爱心帮扶企业</text>
-        <view class="num-wrap">
-          <text class="num">9</text>
-          <text class="unit">家</text>
-        </view>
-      </view>
-      <view class="stat-card bg-teal">
-        <text class="title">爱心物资总数</text>
-        <view class="num-wrap">
-          <text class="num">24180</text>
-          <text class="unit">件</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 金刚区 -->
-    <view class="kingkong-box">
-      <view
-        class="kingkong-item"
-        v-for="(item, index) in kingkongList"
-        :key="index"
-        @click="handleKingkongClick"
-      >
-        <image class="icon" :src="item.icon" mode="aspectFit"></image>
-        <text class="text">{{ item.name }}</text>
-      </view>
-    </view>
-
     <!-- Tabs 选项卡分类 -->
-    <view class="tabs-box">
+    <!-- <view class="tabs-box">
       <view
         class="tab-item"
         :class="{ active: currentTab === 0 }"
@@ -87,10 +18,83 @@
         <text class="tab-text">爱心YI餐</text>
         <view class="line" v-if="currentTab === 1"></view>
       </view>
-    </view>
+    </view> -->
 
     <!-- 物资列表 -->
-    <scroll-view scroll-y class="goods-list-scroll" @scrolltolower="loadMore">
+    <scroll-view
+      style="height: calc(100vh - 110rpx)"
+      scroll-y
+      class="goods-list-scroll"
+      @scrolltolower="loadMore"
+    >
+      <!-- 顶部轮播图 -->
+      <view class="banner-box">
+        <u-swiper
+          :list="bannerList"
+          keyName="image"
+          height="380rpx"
+          circular
+          indicator
+          indicatorActiveColor="#FF4242"
+          radius="16rpx"
+        ></u-swiper>
+      </view>
+
+      <!-- 广播通知栏 -->
+      <view class="notice-box">
+        <u-notice-bar
+          :text="noticeText"
+          icon="volume"
+          color="#333333"
+          bgColor="#FFFFFF"
+          fontSize="26rpx"
+        ></u-notice-bar>
+      </view>
+
+      <!-- 4个统计卡片网格 -->
+      <view class="stats-grid">
+        <view class="stat-card bg-green">
+          <text class="title">爱心联盟商家</text>
+          <view class="num-wrap">
+            <text class="num">74</text>
+            <text class="unit">家</text>
+          </view>
+        </view>
+        <view class="stat-card bg-blue">
+          <text class="title">社区慈善超市</text>
+          <view class="num-wrap">
+            <text class="num">11</text>
+            <text class="unit">家</text>
+          </view>
+        </view>
+        <view class="stat-card bg-light-blue">
+          <text class="title">爱心帮扶企业</text>
+          <view class="num-wrap">
+            <text class="num">9</text>
+            <text class="unit">家</text>
+          </view>
+        </view>
+        <view class="stat-card bg-teal">
+          <text class="title">爱心物资总数</text>
+          <view class="num-wrap">
+            <text class="num">24180</text>
+            <text class="unit">件</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 金刚区 -->
+      <view class="kingkong-box">
+        <view
+          class="kingkong-item"
+          v-for="(item, index) in kingkongList"
+          :key="index"
+          @click="handleKingkongClick"
+        >
+          <text class="icon">{{ item.icon }}</text>
+          <text class="text">{{ item.name }}</text>
+        </view>
+      </view>
       <view class="goods-list" v-if="goodsList.length">
         <view
           class="goods-card"
@@ -201,23 +205,23 @@ export default {
       kingkongList: [
         {
           name: "捐赠申请",
-          icon: "https://img.icons8.com/color/96/clipboard.png",
+          icon: "📋",
         },
         {
           name: "申请帮扶",
-          icon: "https://img.icons8.com/color/96/open-box.png",
+          icon: "📦",
         },
         {
           name: "爱心企业",
-          icon: "https://img.icons8.com/color/96/city-buildings.png",
+          icon: "🏢",
         },
         {
-          name: "捐赠排行",
-          icon: "https://img.icons8.com/color/96/trophy.png",
+          name: "统计配置",
+          icon: "🏆",
         },
         {
-          name: "爱心帮扶",
-          icon: "https://img.icons8.com/color/96/handshake.png",
+          name: "物资申领",
+          icon: "🤝",
         },
       ],
       currentTab: 0,
@@ -275,6 +279,8 @@ export default {
       }
     },
     loadMore() {
+      console.log("加载更多");
+
       if (!this.loading && !this.noMore) {
         this.fetchGoods();
       }
@@ -394,8 +400,7 @@ export default {
     width: 20%;
 
     .icon {
-      width: 72rpx;
-      height: 72rpx;
+      font-size: 52rpx;
       margin-bottom: 12rpx;
     }
 
