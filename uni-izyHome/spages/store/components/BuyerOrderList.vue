@@ -295,7 +295,7 @@ export default {
     },
     goDetail(id) {
       uni.navigateTo({
-        url: `/spages/store/order/detail?id=${id}&type=buy`,
+        url: `/spages/store/order/detail?id=${id}&role=buyer`,
       });
     },
     async showRedeemCode(order) {

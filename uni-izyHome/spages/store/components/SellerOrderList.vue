@@ -195,7 +195,7 @@ export default {
     },
     goDetail(id) {
       uni.navigateTo({
-        url: `/spages/store/order/detail?id=${id}&type=sell`,
+        url: `/spages/store/order/detail?id=${id}&role=seller`,
       });
     },
     // 卖家核销

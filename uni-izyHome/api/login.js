@@ -24,6 +24,7 @@ export function loginByAuth(data) {
  *   nickName: string, // 昵称
  *   avatar: string, // 头像URL
  *   description: string, // 个人描述
+ * volunteerId:志愿者编号（志愿者身份认证，与decodeTelCode二选一
  * }
  *
  * 返回参数 (Response):
