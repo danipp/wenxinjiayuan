@@ -145,7 +145,7 @@
               ></u-line-progress>
             </view>
 
-            <view class="btn-wrap">
+            <!-- <view class="btn-wrap">
               <button
                 v-if="item.status === 0"
                 class="claim-btn btn-primary"
@@ -167,7 +167,7 @@
               >
                 已领完
               </button>
-            </view>
+            </view> -->
           </view>
         </view>
 
