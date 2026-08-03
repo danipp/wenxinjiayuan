@@ -184,6 +184,7 @@ export default {
         if (orderData.payParams) {
           uni.requestPayment({
             ...orderData.payParams,
+            package: orderData.payParams.packageValue,
             success: () => {
               uni.showToast({ title: "支付成功", icon: "success" });
               this.showFrameDetail = false;
