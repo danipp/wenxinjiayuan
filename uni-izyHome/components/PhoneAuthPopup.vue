@@ -10,7 +10,13 @@
     <div class="phone-auth-container">
       <!-- 1. 顶部标题栏 -->
       <div class="popup-header">
-        <span class="title">{{ mode === 'volunteer' ? '志愿者身份认证' : mode === 'resident' ? '安全授权验证' : '身份认证' }}</span>
+        <span class="title">{{
+          mode === "volunteer"
+            ? "志愿者身份认证"
+            : mode === "resident"
+            ? "安全授权验证"
+            : "身份认证"
+        }}</span>
         <div class="close-btn" @click="handlePopupClose">
           <u-icon name="close" color="#999" size="18"></u-icon>
         </div>
@@ -42,7 +48,10 @@
       </div>
 
       <!-- 子面板：手机号授权（resident 模式直接显示，其他模式按 TAB） -->
-      <view v-if="mode === 'resident' || activeTab === 'phone'" class="auth-panel">
+      <view
+        v-if="mode === 'resident' || activeTab === 'phone'"
+        class="auth-panel"
+      >
         <view class="phone-row">
           <span class="item-label">手机号</span>
           <view class="item-value-box">
@@ -62,10 +71,7 @@
           </view>
         </view>
         <!-- 志愿者模式也直接登录 -->
-        <view
-          v-if="phoneNumber && mode === 'volunteer'"
-          class="confirm-box"
-        >
+        <view v-if="phoneNumber && mode === 'volunteer'" class="confirm-box">
           <button class="confirm-btn phone-btn" @click="emitPhoneSuccess">
             确认登录
           </button>
@@ -73,7 +79,10 @@
       </view>
 
       <!-- 子面板：志愿者编号认证（非 resident 模式） -->
-      <view v-if="mode !== 'resident' && activeTab === 'code'" class="auth-panel">
+      <view
+        v-if="mode !== 'resident' && activeTab === 'code'"
+        class="auth-panel"
+      >
         <view class="volunteer-form">
           <view class="form-item">
             <text class="form-label">志愿者编号</text>
@@ -94,7 +103,7 @@
             :disabled="!volunteerCode || verifying"
             @click="handleVolunteerVerify"
           >
-            {{ verifying ? '验证中...' : '验证并登录' }}
+            {{ verifying ? "验证中..." : "验证并登录" }}
           </button>
         </view>
       </view>
@@ -110,7 +119,7 @@
 
 <script>
 import phoneAuthMixin from "@/utils/phoneAuthMixin.js";
-import request from "@/utils/request.js";
+import { loginByAuth } from "@/api/login";
 
 export default {
   name: "PhoneAuthPopup",
@@ -179,13 +188,11 @@ export default {
       if (!this.volunteerCode.trim()) return;
       this.verifying = true;
       try {
-        const res = await request({
-          url: "/api/mine/volunteer/verify",
-          method: "post",
-          data: { volunteerCode: this.volunteerCode.trim() },
+        const res = await loginByAuth({
+          volunteerId: this.volunteerCode.trim(),
         });
         if (res.code === "00000" && res.data) {
-          const phone = res.data.phoneNumber || res.data.cellphone || res.data;
+          const phone = res.data;
           this.phoneNumber = phone;
           uni.setStorageSync("user_phone_number", phone);
           uni.showToast({ title: "验证成功", icon: "success" });
@@ -395,8 +402,12 @@ export default {
       border-radius: 44rpx;
       border: none;
 
-      &::after { border: none; }
-      &[disabled] { opacity: 0.5; }
+      &::after {
+        border: none;
+      }
+      &[disabled] {
+        opacity: 0.5;
+      }
 
       &.code-btn {
         background-color: #3b82f6;
