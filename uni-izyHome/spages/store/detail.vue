@@ -166,7 +166,7 @@
       </button>
       <!-- 混合(goodsType=3): 积分+现金 一个按钮 -->
       <button
-        v-if="goods.goodsType === 3"
+        v-else-if="goods.goodsType === 3"
         class="buy-action-btn pay-btn"
         @click="handlePurchase"
       >

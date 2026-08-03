@@ -302,9 +302,7 @@ export default {
       },
     };
   },
-  onLoad(options) {
-    this.getPointsDetail();
-  },
+  onLoad(options) {},
   onShow() {
     // 页面初始化时读取本地是否有编辑过的用户信息
     const cachedProfile = uni.getStorageSync("user_profile_data");
@@ -312,6 +310,7 @@ export default {
       this.userInfo.avatar = cachedProfile.avatarUrl;
       this.userInfo.nickname = cachedProfile.nickname;
     }
+    this.getPointsDetail();
   },
   methods: {
     getPointsDetail() {
