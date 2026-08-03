@@ -22,13 +22,13 @@
       </div>
 
       <!-- 模式二：地址选择栏 -->
-      <div v-if="mode === 'select'" class="address-bar" @click="chooseLocation">
+      <!-- <div v-if="mode === 'select'" class="address-bar" @click="chooseLocation">
         <span class="label">地址：</span>
         <span class="value text-ellipsis">{{
           locationInfo.address || "点击选择地理位置"
         }}</span>
         <u-icon name="arrow-right" color="#b2b2b2" size="14"></u-icon>
-      </div>
+      </div> -->
 
       <!-- 社区滚动选择器 -->
       <div class="picker-container">
@@ -73,6 +73,8 @@
 </template>
 
 <script>
+import { list3, switchCommunity } from "@/api/index.js";
+
 export default {
   name: "CommunitySelector",
   props: {
@@ -107,6 +109,7 @@ export default {
       },
       communityList: [],
       pickerValue: [0],
+      loading: false,
     };
   },
   watch: {
@@ -126,135 +129,56 @@ export default {
   },
   methods: {
     // 初始化数据逻辑
-    initData() {
-      // 1. 邀请模式下的数据初始化
+    async initData() {
+      // 1. 邀请模式：加载全部启用社区
       if (this.mode === "invite") {
-        // 如果外部没有通过 prop 传入初始数据，则尝试读取本地已缓存的社区列表
         if (this.communityList.length === 0) {
-          const cachedCommunities = uni.getStorageSync("cached_community_list");
-          if (cachedCommunities && cachedCommunities.length > 0) {
-            this.communityList = cachedCommunities;
-            this.pickerValue = [0]; // 重置滚轮位置到第一项
-          }
+          await this.fetchAllCommunities();
         }
       }
 
-      // 2. 选择模式下的数据初始化
+      // 2. 选择模式：优先读缓存，无缓存则请求全量列表
       else if (this.mode === "select") {
         const cachedLocation = uni.getStorageSync("user_location_info");
-        const cachedCommunities = uni.getStorageSync("cached_community_list");
-
         if (cachedLocation) {
           this.locationInfo = cachedLocation;
-          if (cachedCommunities && cachedCommunities.length > 0) {
-            this.communityList = cachedCommunities;
-          } else {
-            this.fetchNearbyCommunities(
-              cachedLocation.latitude,
-              cachedLocation.longitude
-            );
+        }
+        // const cachedCommunities = uni.getStorageSync("cached_community_list");
+        // if (cachedCommunities && cachedCommunities.length > 0) {
+        //   this.communityList = cachedCommunities;
+        // } else {
+        //   await this.fetchAllCommunities();
+        // }
+        await this.fetchAllCommunities();
+      }
+    },
+
+    // 拉取全部启用社区列表
+    async fetchAllCommunities() {
+      this.loading = true;
+      try {
+        const res = await list3();
+        if (res.code === "00000" && Array.isArray(res.data)) {
+          this.communityList = res.data.filter((item) => item.status === 1);
+          this.pickerValue = [0];
+          if (!this.nocache) {
+            uni.setStorageSync("cached_community_list", this.communityList);
           }
         } else {
-          // 如果没有地址缓存，清空列表，防止残留上一次的数据
-          this.communityList = [];
+          uni.showToast({ title: res.msg || "获取社区列表失败", icon: "none" });
         }
+      } catch (e) {
+        uni.showToast({ title: "获取社区列表失败", icon: "none" });
+      } finally {
+        this.loading = false;
       }
     },
 
-    // 检查定位授权
-    async checkLocationPermission() {
-      return new Promise((resolve) => {
-        // #ifdef MP-WEIXIN
-        uni.getSetting({
-          success: (res) => {
-            if (res.authSetting["scope.userLocation"] === false) {
-              uni.showModal({
-                title: "提示",
-                content: "需要获取您的地理位置以便匹配附近社区，请允许授权",
-                confirmColor: "#07c160",
-                success: (modalRes) => {
-                  if (modalRes.confirm) {
-                    uni.openSetting({
-                      success: (settingRes) => {
-                        resolve(!!settingRes.authSetting["scope.userLocation"]);
-                      },
-                      fail: () => resolve(false),
-                    });
-                  } else {
-                    resolve(false);
-                  }
-                },
-              });
-            } else if (res.authSetting["scope.userLocation"] === undefined) {
-              uni.authorize({
-                scope: "scope.userLocation",
-                success: () => resolve(true),
-                fail: () => resolve(false),
-              });
-            } else {
-              resolve(true);
-            }
-          },
-          fail: () => resolve(false),
-        });
-        // #endif
-
-        // #ifndef MP-WEIXIN
-        resolve(true);
-        // #endif
-      });
-    },
-
-    // 选择位置
-    async chooseLocation() {
-      const hasPermission = await this.checkLocationPermission();
-      if (!hasPermission) {
-        uni.showToast({ title: "获取定位权限失败", icon: "none" });
-        return;
-      }
-
-      uni.chooseLocation({
-        success: (res) => {
-          const isSameLocation =
-            this.locationInfo.latitude === res.latitude &&
-            this.locationInfo.longitude === res.longitude;
-
-          if (isSameLocation && this.communityList.length > 0) {
-            return;
-          }
-
-          this.locationInfo = {
-            address: res.address,
-            latitude: res.latitude,
-            longitude: res.longitude,
-            name: res.name,
-          };
-          !this.nocache &&
-            uni.setStorageSync("user_location_info", this.locationInfo);
-          this.pickerValue = [0];
-          this.fetchNearbyCommunities(res.latitude, res.longitude);
-        },
-        fail: (err) => {
-          console.log("选择位置失败或取消", err);
-        },
-      });
-    },
-
-    // 接口请求附近社区列表
-    async fetchNearbyCommunities(lat, lng) {
+    // 接口请求附近社区列表（保留接口，当前使用全量列表）
+    async fetchNearbyCommunities() {
       uni.showLoading({ title: "获取附近社区..." });
       try {
-        // 模拟接口数据
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        const mockData = [
-          { id: 101, name: "都府社区" },
-          { id: 102, name: "财厅前社区" },
-          { id: 103, name: "中山一社区" },
-          { id: 104, name: "广卫社区" },
-        ];
-
-        this.communityList = mockData;
-        !this.nocache && uni.setStorageSync("cached_community_list", mockData);
+        await this.fetchAllCommunities();
       } catch (e) {
         uni.showToast({ title: "获取社区失败", icon: "none" });
       } finally {
@@ -264,6 +188,27 @@ export default {
 
     onPickerChange(e) {
       this.pickerValue = e.detail.value;
+    },
+
+    // 切换社区并更新本地缓存的用户信息
+    async handleSwitchCommunity(communityId) {
+      try {
+        const res = await switchCommunity(communityId);
+        if (res.code === "00000") {
+          // 更新本地存储的用户信息
+          if (res.data) {
+            uni.setStorageSync("user_profile_data", {
+              nickname: res.data.nickName,
+              avatar: res.data.avatar,
+              communityId: res.data.communityId,
+              communityName: res.data.communityName,
+            });
+          }
+        }
+        return res;
+      } catch (e) {
+        throw e;
+      }
     },
 
     handleConfirm() {
