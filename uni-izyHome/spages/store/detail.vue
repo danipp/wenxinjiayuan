@@ -164,23 +164,15 @@
       >
         立即兑换
       </button>
-      <!-- 混合(goodsType=3): 积分兑换 + 积分+现金 -->
-      <template v-else-if="goods.goodsType === 3">
-        <button
-          class="buy-action-btn"
-          style="flex: none; width: 300rpx; font-size: 28rpx"
-          @click="handleRedeem"
-        >
-          积分兑换
-        </button>
-        <button
-          class="buy-action-btn pay-btn"
-          style="flex: none; width: 300rpx; font-size: 28rpx"
-          @click="handlePurchase"
-        >
-          ¥{{ goods.cashPrice || goods.price }}
-        </button>
-      </template>
+      <!-- 混合(goodsType=3): 积分+现金 一个按钮 -->
+      <button
+        v-if="goods.goodsType === 3"
+        class="buy-action-btn pay-btn"
+        @click="handlePurchase"
+      >
+        {{ goods.pointsPrice }}积分 + ¥{{ goods.cashPrice || goods.price }}
+        立即兑换
+      </button>
       <!-- 纯现金(goodsType=2): 立即购买 -->
       <button v-else class="buy-action-btn pay-btn" @click="handlePurchase">
         立即购买 ¥{{ goods.cashPrice || goods.price }}
@@ -314,7 +306,7 @@ export default {
               const orderRes = await create({
                 goodsId: this.goodsId,
                 count: 1,
-                payType: 1,
+                payType: this.goods.goodsType,
               });
               uni.hideLoading();
               this.userPoints -= this.goods.pointsPrice;
@@ -364,13 +356,14 @@ export default {
               const orderRes = await create({
                 goodsId: this.goodsId,
                 count: 1,
-                payType: 2,
+                payType: this.goods.goodsType,
               });
               uni.hideLoading();
               const d = orderRes.data || {};
               if (d.payParams) {
                 uni.requestPayment({
                   ...d.payParams,
+                  package: d.payParams.packageValue,
                   success: () => {
                     uni.showToast({ title: "支付成功", icon: "success" });
                   },

@@ -96,7 +96,7 @@ export default {
       try {
         await create2({
           orderId: Number(this.orderId),
-          rating: this.rating,
+          rating: Number(this.rating) + 1,
           content: this.content,
         });
         uni.hideLoading();
