@@ -39,8 +39,8 @@
 
       <!-- 标题 -->
       <view class="detail-title-row">
-        <text class="title-text">帮助详情</text>
-        <text class="tag-label">代发布</text>
+        <text class="title-text">{{ detail.title }}</text>
+        <text class="tag-label">{{ detail.requirement }}</text>
       </view>
       <text class="publish-date">{{ detail.publishDate }}</text>
 
@@ -203,40 +203,65 @@ export default {
   },
   methods: {
     getStatusString(statusInt) {
-      switch(statusInt) {
-        case 1: return 'pending';
-        case 2: return 'helping';
-        case 3: return 'toEvaluate';
-        case 4: return 'completed';
-        case 5: return 'expired';
-        default: return 'pending';
+      switch (statusInt) {
+        case 1:
+          return "pending";
+        case 2:
+          return "helping";
+        case 3:
+          return "toEvaluate";
+        case 4:
+          return "completed";
+        case 5:
+          return "expired";
+        default:
+          return "pending";
       }
     },
     getStatusText(statusInt) {
-      switch(statusInt) {
-        case 1: return '待帮忙';
-        case 2: return '已接单';
-        case 3: return '待评价';
-        case 4: return '已完成';
-        case 5: return '已过期';
-        default: return '未知';
+      switch (statusInt) {
+        case 1:
+          return "待帮忙";
+        case 2:
+          return "已接单";
+        case 3:
+          return "待评价";
+        case 4:
+          return "已完成";
+        case 5:
+          return "已过期";
+        default:
+          return "未知";
       }
     },
     getRatingLabel(ratingNum) {
-      const map = { 1: "非常不满意", 2: "不满意", 3: "一般", 4: "满意", 5: "非常满意" };
+      const map = {
+        1: "非常不满意",
+        2: "不满意",
+        3: "一般",
+        4: "满意",
+        5: "非常满意",
+      };
       return map[ratingNum] || "满意";
     },
     getRatingKey(ratingNum) {
-      const map = { 1: "very_unsatisfied", 2: "unsatisfied", 3: "normal", 4: "satisfied", 5: "very_satisfied" };
+      const map = {
+        1: "very_unsatisfied",
+        2: "unsatisfied",
+        3: "normal",
+        4: "satisfied",
+        5: "very_satisfied",
+      };
       return map[ratingNum] || "satisfied";
     },
     async getDetail() {
       uni.showLoading({ title: "加载中..." });
       try {
         const res = await publicDetail(this.id);
-        if (res.code === '00000') {
+        if (res.code === "00000") {
           const item = res.data || {};
           this.detail = {
+            requirement: item.requirement,
             id: item.demandId || item.id,
             title: item.title,
             useCount: 0,
@@ -250,11 +275,13 @@ export default {
             description: item.content || item.remark || "",
             isMine: true, // 简化处理，暂时允许相关操作
             phone: item.memberPhone,
-            evaluation: item.evaluateContent ? {
-              rating: this.getRatingKey(item.rating),
-              ratingLabel: this.getRatingLabel(item.rating),
-              remark: item.evaluateContent
-            } : null
+            evaluation: item.evaluateContent
+              ? {
+                  rating: this.getRatingKey(item.rating),
+                  ratingLabel: this.getRatingLabel(item.rating),
+                  remark: item.evaluateContent,
+                }
+              : null,
           };
         } else {
           uni.showToast({ title: res.msg || "获取详情失败", icon: "none" });
@@ -289,15 +316,18 @@ export default {
               uni.showLoading({ title: "接单中..." });
               const result = await accept(this.detail.id);
               uni.hideLoading();
-              if (result.code === '00000') {
+              if (result.code === "00000") {
                 uni.showToast({ title: "接单成功！", icon: "success" });
                 this.getDetail(); // 刷新详情数据
               } else {
-                uni.showToast({ title: result.msg || "接单失败", icon: "none" });
+                uni.showToast({
+                  title: result.msg || "接单失败",
+                  icon: "none",
+                });
               }
             } catch (e) {
               uni.hideLoading();
-              uni.showToast({ title: "接单失败，请重试", icon: "none" });
+              uni.showToast({ title: e.msg, icon: "none" });
             }
           }
         },
