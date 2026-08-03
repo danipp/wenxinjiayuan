@@ -138,7 +138,7 @@
     </view>
 
     <!-- 6. 底部固定栏 -->
-    <view class="footer-bar">
+    <view class="footer-bar" v-if="user_phone_number">
       <view class="footer-icon-btn" @click="goToShop">
         <u-icon name="home" color="#64748b" size="20"></u-icon>
         <text class="icon-label">店铺</text>
@@ -189,6 +189,7 @@ import { collect, isCollected } from "@/spages/api/goods";
 export default {
   data() {
     return {
+      user_phone_number: uni.getStorageSync("user_phone_number") || null,
       goodsId: null,
       userPoints: 850,
       isFavorited: false,

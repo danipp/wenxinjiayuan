@@ -143,18 +143,22 @@
       mode="select"
       @confirm="handleCommunityChange"
     />
+    <PhoneAuthPopup :show.sync="showPhoneAuth" />
   </view>
 </template>
 
 <script>
 import CommunitySelector from "@/components/community.vue";
+import PhoneAuthPopup from "@/components/PhoneAuthPopup.vue";
 
 export default {
   components: {
     CommunitySelector,
+    PhoneAuthPopup,
   },
   data() {
     return {
+      showPhoneAuth: false,
       currentCommunityName: "请选择社区",
       showCommunitySelector: false,
       searchKeyword: "",
@@ -256,6 +260,11 @@ export default {
     },
     // 分类弹窗内“确认”跳转
     confirmServiceSelection() {
+      const user_phone_number = uni.getStorageSync("user_phone_number") || null;
+      if (!user_phone_number) {
+        this.showPhoneAuth = true;
+        return;
+      }
       if (!this.selectedOption) return;
       this.selectServiceAndGo(this.selectedOption);
       this.closeDetailPopup();

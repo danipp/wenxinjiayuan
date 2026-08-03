@@ -274,6 +274,11 @@
       mode="invite"
       @confirm="handleInviteCommunityConfirm"
     />
+    <PhoneAuthPopup
+      :show.sync="showPhoneAuth"
+      @auth-success="onAuthSuccess"
+      :mustAuth="true"
+    />
   </view>
 </template>
 
@@ -281,12 +286,16 @@
 // 引入关联组件
 import CommunitySelector from "@/components/community.vue";
 import { getPointsDetail } from "@/api/mine.js";
+import PhoneAuthPopup from "@/components/PhoneAuthPopup.vue";
+
 export default {
   components: {
     CommunitySelector,
+    PhoneAuthPopup,
   },
   data() {
     return {
+      showPhoneAuth: false,
       showQrCode: false,
       showInviteSelector: false,
       showInviteShare: false,
@@ -306,13 +315,21 @@ export default {
   onShow() {
     // 页面初始化时读取本地是否有编辑过的用户信息
     const cachedProfile = uni.getStorageSync("user_profile_data");
+    const user_phone_number = uni.getStorageSync("user_phone_number") || null;
     if (cachedProfile) {
       this.userInfo.avatar = cachedProfile.avatarUrl;
       this.userInfo.nickname = cachedProfile.nickname;
     }
+    if (!user_phone_number) {
+      this.showPhoneAuth = true;
+      return;
+    }
     this.getPointsDetail();
   },
   methods: {
+    onAuthSuccess() {
+      this.getPointsDetail();
+    },
     getPointsDetail() {
       getPointsDetail().then((res) => {
         this.pointDetail.balance = res.data.balance;
