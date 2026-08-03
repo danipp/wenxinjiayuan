@@ -244,6 +244,36 @@
           "style": {
             "navigationBarTitleText": "店铺详情"
           }
+        },
+        {
+          "path": "assist/donation/index",
+          "style": {
+            "navigationBarTitleText": "捐赠申请"
+          }
+        },
+        {
+          "path": "assist/apply/index",
+          "style": {
+            "navigationBarTitleText": "申请帮扶"
+          }
+        },
+        {
+          "path": "assist/company/index",
+          "style": {
+            "navigationBarTitleText": "爱心企业"
+          }
+        },
+        {
+          "path": "assist/statis/index",
+          "style": {
+            "navigationBarTitleText": "统计配置"
+          }
+        },
+        {
+          "path": "assist/material/index",
+          "style": {
+            "navigationBarTitleText": "物资申领"
+          }
         }
       ]
     }

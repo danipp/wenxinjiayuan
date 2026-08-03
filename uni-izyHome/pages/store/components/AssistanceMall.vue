@@ -89,7 +89,7 @@
           class="kingkong-item"
           v-for="(item, index) in kingkongList"
           :key="index"
-          @click="handleKingkongClick"
+          @click="handleKingkongClick(item.url)"
         >
           <text class="icon">{{ item.icon }}</text>
           <text class="text">{{ item.name }}</text>
@@ -206,22 +206,27 @@ export default {
         {
           name: "捐赠申请",
           icon: "📋",
+          url: "/spages/assist/donation/index",
         },
         {
           name: "申请帮扶",
           icon: "📦",
+          url: "/spages/assist/apply/index",
         },
         {
           name: "爱心企业",
           icon: "🏢",
+          url: "/spages/assist/company/index",
         },
         {
           name: "统计配置",
           icon: "🏆",
+          url: "/spages/assist/statis/index",
         },
         {
           name: "物资申领",
           icon: "🤝",
+          url: "/spages/assist/material/index",
         },
       ],
       currentTab: 0,
@@ -285,7 +290,11 @@ export default {
         this.fetchGoods();
       }
     },
-    handleKingkongClick() {
+    handleKingkongClick(url) {
+      if (url) {
+        uni.navigateTo({ url });
+        return;
+      }
       uni.showToast({ title: "正在开发中", icon: "none" });
     },
     calculatePercent(applied, total) {
