@@ -18,13 +18,12 @@
           </view>
 
           <view class="card-body">
-            <image
-              class="goods-cover"
-              :src="order.image"
-              mode="aspectFill"
-            ></image>
+            <image class="goods-cover" :src="order.image"></image>
             <view class="goods-right">
               <text class="goods-title text-ellipsis-2">{{ order.title }}</text>
+              <view class="reason" v-if="order.refundReason"
+                >退款原因：{{ order.refundReason }}</view
+              >
               <view class="price-count-row">
                 <text class="goods-price">{{ order.priceText }}</text>
                 <text class="goods-count">x{{ order.count }}</text>
@@ -44,9 +43,25 @@
             </button>
 
             <!-- 退款申请（status=40/41/42）：同意退款 / 拒绝退款 -->
-            <template v-if="order.status === 40 || order.status === 41 || order.status === 42">
-              <button class="footer-btn btn-primary-solid" @click="handleApproveRefund(order)">同意退款</button>
-              <button class="footer-btn btn-deny" @click="handleRejectRefund(order)">拒绝退款</button>
+            <template
+              v-if="
+                order.status === 40 ||
+                order.status === 41 ||
+                order.status === 42
+              "
+            >
+              <button
+                class="footer-btn btn-primary-solid"
+                @click="handleApproveRefund(order)"
+              >
+                同意退款
+              </button>
+              <button
+                class="footer-btn btn-deny"
+                @click="handleRejectRefund(order)"
+              >
+                拒绝退款
+              </button>
             </template>
 
             <text v-if="order.status === 30" class="completed-tips"
@@ -135,10 +150,16 @@ export default {
         const res = await page(this.buildParams());
         const pageData = res.data || {};
         const list = pageData.content || [];
-        const isLast = pageData.last !== undefined ? pageData.last : list.length < this.pageSize;
+        const isLast =
+          pageData.last !== undefined
+            ? pageData.last
+            : list.length < this.pageSize;
 
         const mapped = list.map((item) => {
-          const statusInfo = STATUS_MAP[item.status] || { text: "未知", cls: "" };
+          const statusInfo = STATUS_MAP[item.status] || {
+            text: "未知",
+            cls: "",
+          };
           return {
             id: item.orderId || item.id,
             orderNum: item.orderNum || "",
@@ -147,14 +168,17 @@ export default {
             statusCls: statusInfo.cls,
             title: item.goodsTitle || "",
             image: item.goodsImage || "",
-            priceText: item.payType === 1
-              ? `已收 ${item.totalPoints || 0} 积分`
-              : `已收 ¥${(item.totalAmount || 0).toFixed(2)}`,
+            refundReason: item.refundReason || "",
+            priceText:
+              item.payType === 1
+                ? `已收 ${item.totalPoints || 0} 积分`
+                : `已收 ¥${(item.totalAmount || 0).toFixed(2)}`,
             count: item.count || 1,
           };
         });
 
-        this.sellerOrders = this.pageNum === 1 ? mapped : [...this.sellerOrders, ...mapped];
+        this.sellerOrders =
+          this.pageNum === 1 ? mapped : [...this.sellerOrders, ...mapped];
         this.noMore = isLast;
         if (!isLast) this.pageNum++;
       } catch (e) {

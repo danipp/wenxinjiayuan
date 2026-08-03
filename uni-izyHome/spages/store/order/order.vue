@@ -71,7 +71,7 @@ export default {
           { name: "全部", status: "all" },
           { name: "待核销", status: "pending" },
           { name: "已完成", status: "completed" },
-          { name: "已退款", status: "refund" },
+          { name: "退款申请", status: "refund" },
         ];
       }
     },
