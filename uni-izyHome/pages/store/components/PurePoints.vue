@@ -67,7 +67,7 @@ export default {
           pageNumber: this.pageNum,
           pageSize: this.pageSize,
           goodsType: 1,
-          scene: "积分兑换",
+          scene: "points",
           status: 1,
         });
         const pageData = res.data || {};

@@ -133,3 +133,48 @@ export function switchCommunity(communityId) {
   })
 }
 
+/**
+ * 接口名称: C端-获取首页轮播通知列表
+ * 路径: GET /api/notice/active
+ * 请求参数 (Request):
+ * {
+ *   communityId: integer, // 
+ * }
+ *
+ * 返回参数 (Response):
+ * --- 响应 200 ---
+ * {
+ *   code: string, // 状态码 {00000：成功 | A0401：未登录 | A0403：账号冻结 | B0001 系统执行出错，错误信息msg }
+ *   data: Object, // 数据
+ *   msg: string, // 成功/失败消息
+ *   total: integer,
+ * }
+ *
+ * --- 成功返回通知列表 ---
+ * {
+ *   del_flag: boolean,
+ *   createTime: string, // 创建时间
+ *   updateTime: string, // 最后更新时间
+ *   noticeId: integer,
+ *   title: string, // 通知标题
+ *   content: string, // 通知内容
+ *   type: integer, // 通知类型：1系统公告 2社区活动 3捐赠播报 4帮扶动态
+ *   communityId: integer, // 所属社区ID（null表示全局通知）
+ *   communityName: string, // 所属社区名称
+ *   linkType: integer, // 跳转类型：0不跳转 1活动 2商品 3店铺 4外部链接
+ *   linkValue: string, // 跳转目标值
+ *   sortNum: integer, // 排序号
+ *   status: integer, // 状态：1上架 2下架
+ *   startTime: string, // 投放开始时间
+ *   endTime: string, // 投放结束时间
+ *   id: integer,
+ * }
+ */
+export function active(data) {
+  return request({
+    url: `/api/notice/active`,
+    method: 'get',
+    data: data || {}
+  })
+}
+

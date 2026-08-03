@@ -68,7 +68,7 @@ export default {
           pageNumber: this.pageNum,
           pageSize: this.pageSize,
           goodsType: 3,
-          scene: "志愿者商城",
+          scene: "volunteer",
           status: 1,
         });
         const pageData = res.data || {};

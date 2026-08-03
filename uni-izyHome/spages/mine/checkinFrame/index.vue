@@ -120,8 +120,8 @@ export default {
         const res = await page1({
           pageNumber: this.page,
           pageSize: this.pageSize,
-          goodsType: 4,
-          scene: "打卡相框",
+          goodsType: 3,
+          scene: "frame",
           status: 1,
         });
         const pageData = res.data || {};

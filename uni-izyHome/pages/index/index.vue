@@ -11,7 +11,7 @@
     </view>
 
     <!-- 2. 上下轮播的消息动态面板 -->
-    <view class="notice-swiper-bar">
+    <view class="notice-swiper-bar" v-if="noticeList.length">
       <u-icon name="volume-fill" color="#07c160" size="18"></u-icon>
       <swiper class="notice-swiper" vertical autoplay circular interval="3000">
         <swiper-item
@@ -19,11 +19,11 @@
           :key="index"
           class="swiper-item"
         >
-          <image class="avatar" :src="item.avatar" mode="aspectFill"></image>
-          <text class="nickname">{{ item.nickname }}</text>
-          <text class="action">完成</text>
-          <text class="task text-ellipsis">[{{ item.taskName }}]</text>
-          <text class="time">{{ item.date }}</text>
+          <!-- <image class="avatar" :src="item.avatar" mode="aspectFill"></image> -->
+          <text class="nickname">{{ item.title }}:</text>
+          <!-- <text class="action">完成</text> -->
+          <text class="task text-ellipsis">[{{ item.content }}]</text>
+          <text class="time">{{ item.startTime }}</text>
         </swiper-item>
       </swiper>
     </view>
@@ -254,7 +254,7 @@ import CommunitySelector from "@/components/community.vue";
 import NfcCheckinSuccess from "./components/NfcCheckinSuccess.vue";
 import PhoneAuthPopup from "@/components/PhoneAuthPopup.vue";
 import loginApi from "@/utils/login.js";
-import { create4 } from "@/api/index";
+import { create4, active } from "@/api/index";
 import { square } from "@/spages/api/activity";
 
 export default {
@@ -264,6 +264,7 @@ export default {
       currentTab: "community",
       showPhoneAuth: false,
       currentCommunityName: "请选择社区",
+      currentCommunity: {},
       showCommunitySelector: false,
       showNfcCheckinSuccess: false,
       nfcCheckinParams: {},
@@ -282,26 +283,7 @@ export default {
       recruitNoMore: false,
       recruitRefreshing: false,
       // 轮播
-      noticeList: [
-        {
-          avatar: "https://cdn.uviewui.com/uview/album/5.jpg",
-          nickname: "罗*完成",
-          taskName: "床单清洗",
-          date: "08月16日",
-        },
-        {
-          avatar: "https://cdn.uviewui.com/uview/album/6.jpg",
-          nickname: "张*完成",
-          taskName: "陪同就医",
-          date: "08月17日",
-        },
-        {
-          avatar: "https://cdn.uviewui.com/uview/album/7.jpg",
-          nickname: "李*完成",
-          taskName: "卫生打扫",
-          date: "08月18日",
-        },
-      ],
+      noticeList: [],
     };
   },
   computed: {
@@ -314,22 +296,30 @@ export default {
   },
   onLoad(options) {
     loginApi().then((res) => {
-      this.loadAd();
       if (this.hasNfcCheckinParams(options)) {
         this.nfcCheckinParams = this.formatNfcCheckinParams(options);
         this.create4(this.nfcCheckinParams);
       }
+      this.fetchCommunityList();
+      this.fetchRecruitList();
+      this.getActive();
     });
-    this.fetchCommunityList();
-    this.fetchRecruitList();
   },
   onShow() {
     const cachedLocation = uni.getStorageSync("selected_community");
     if (cachedLocation && cachedLocation.name) {
       this.currentCommunityName = cachedLocation.name;
+      this.currentCommunity = cachedLocation;
     }
   },
   methods: {
+    getActive() {
+      active({ communityId: this.currentCommunity.communityId || null }).then(
+        (res) => {
+          this.noticeList = res.data || [];
+        }
+      );
+    },
     // ==================== 社区活动 ====================
     async fetchCommunityList() {
       if (this.communityLoading || this.communityNoMore) return;
@@ -339,6 +329,7 @@ export default {
           pageNumber: this.communityPage,
           pageSize: this.communityPageSize,
           type: 2,
+          communityId: this.currentCommunity.communityId || null,
         });
         const pageData = res.data || {};
         const list = pageData.content || [];
@@ -397,6 +388,7 @@ export default {
           pageNumber: this.recruitPage,
           pageSize: this.recruitPageSize,
           type: 3,
+          communityId: this.currentCommunity.communityId || null,
         });
         const pageData = res.data || {};
         const list = pageData.content || [];
@@ -472,13 +464,13 @@ export default {
     handleNfcSubmitSuccess(params) {
       console.log("NFC打卡提交成功：", params);
     },
-    loadAd() {},
     openCommunitySelector() {
       this.showCommunitySelector = true;
     },
     handleCommunityChange(data) {
       if (data && data.community) {
         this.currentCommunityName = data.community.name;
+        this.currentCommunity = data.community;
         uni.showToast({
           title: `已切换至 ${data.community.name}`,
           icon: "none",
