@@ -100,7 +100,7 @@ export default {
   },
   methods: {
     setRating(val) {
-      this.rating = val + 1;
+      this.rating = val;
     },
     async handleSubmit() {
       if (!this.isFormValid) {
@@ -111,7 +111,7 @@ export default {
       try {
         await comment({
           activityId: Number(this.activityId),
-          score: this.rating,
+          score: Number(this.rating) + 1,
           emoji: this.emojiMap[this.rating] || "😊",
           statusText: this.statusMap[this.rating] || "",
           content: this.content,

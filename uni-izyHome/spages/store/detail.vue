@@ -1,8 +1,8 @@
 <template>
   <view class="detail-container">
-    <u-sticky>
+    <!-- <u-sticky>
       <u-notice-bar :text="goods.noticeText" mode="closable"></u-notice-bar>
-    </u-sticky>
+    </u-sticky> -->
     <!-- 1. 商品大图轮播 -->
     <swiper
       class="goods-swiper"

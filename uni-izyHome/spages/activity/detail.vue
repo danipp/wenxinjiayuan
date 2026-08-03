@@ -1,8 +1,22 @@
 <template>
   <view>
-    <cu-custom>
-      <view style="font-weight: 500; font-size: 32rpx">活动详情</view>
-    </cu-custom>
+    <u-sticky>
+      <cu-custom>
+        <view style="font-weight: 500; font-size: 32rpx">活动详情</view>
+      </cu-custom>
+      <!-- 活动发起者关注栏 -->
+      <view v-if="activity.publisherUserId" class="author-follow-bar">
+        <text class="author-label">发起者</text>
+        <text class="author-name">{{ activity.authorName || "匿名用户" }}</text>
+        <view
+          class="follow-btn"
+          :class="{ 'follow-btn-active': isFollowing }"
+          @click="toggleFollow"
+        >
+          <text>{{ isFollowing ? "已关注" : "+ 关注" }}</text>
+        </view>
+      </view>
+    </u-sticky>
     <view class="banner">
       <image :src="activity.coverImage" mode="widthFix" style="width: 100%" />
     </view>
@@ -101,6 +115,7 @@ import {
   photos,
   averageScore,
 } from "@/spages/api/activity";
+import { follow, unfollow } from "@/spages/api/follow";
 
 export default {
   components: {
@@ -121,6 +136,7 @@ export default {
       showProfileEdit: false,
       showPhoneAuth: false,
       showIntroPopup: false,
+      isFollowing: false,
       activityId: "",
       activity: {},
       joinedNeighbors: [],
@@ -223,7 +239,10 @@ export default {
     // 仅刷新评价列表
     async refreshReviews() {
       try {
-        const commentsRes = await comments(this.activityId, { pageNumber: 1, pageSize: 2 });
+        const commentsRes = await comments(this.activityId, {
+          pageNumber: 1,
+          pageSize: 2,
+        });
         const commentsData = commentsRes.data || {};
         const reviewList = commentsData.content || [];
         this.reviews = reviewList.map((item) => ({
@@ -304,6 +323,46 @@ export default {
       }
     },
 
+    /** 关注/取消关注切换 */
+    toggleFollow() {
+      if (!this.activity.publisherUserId) return;
+      if (this.isFollowing) {
+        this.doUnfollow();
+      } else {
+        this.doFollow();
+      }
+    },
+    /** 执行关注 */
+    async doFollow() {
+      try {
+        const res = await follow({
+          targetUserId: this.activity.publisherUserId,
+        });
+        if (res.code === "00000") {
+          this.isFollowing = true;
+          uni.showToast({ title: "关注成功", icon: "none" });
+        } else {
+          uni.showToast({ title: res.msg || "关注失败", icon: "none" });
+        }
+      } catch (e) {
+        uni.showToast({ title: e.msg, icon: "none" });
+      }
+    },
+    /** 执行取消关注 */
+    async doUnfollow() {
+      try {
+        const res = await unfollow(this.activity.publisherUserId);
+        if (res.code === "00000") {
+          this.isFollowing = false;
+          uni.showToast({ title: "已取消关注", icon: "none" });
+        } else {
+          uni.showToast({ title: res.msg || "取消关注失败", icon: "none" });
+        }
+      } catch (e) {
+        uni.showToast({ title: e.msg, icon: "none" });
+      }
+    },
+
     // 简单时间格式化 "X分钟前" / "X小时前" 等
     formatJoinTime(timeStr) {
       if (!timeStr) return "";
@@ -337,7 +396,8 @@ export default {
         this.activity = {
           ...this.activity,
           signedUp: d.signedUp || true,
-          participantCount: d.participantCount || (this.activity.participantCount || 0) + 1,
+          participantCount:
+            d.participantCount || (this.activity.participantCount || 0) + 1,
         };
         const joinedList = Array.isArray(joinedRes.data) ? joinedRes.data : [];
         this.joinedNeighbors = joinedList.map((item) => ({
@@ -394,8 +454,42 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.author-follow-bar {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 32rpx;
+  background-color: #ffffff;
+  font-size: 26rpx;
+  color: #999;
+
+  .author-label {
+    color: #999;
+    margin-right: 12rpx;
+  }
+
+  .author-name {
+    flex: 1;
+    color: #333;
+    font-weight: 500;
+  }
+
+  .follow-btn {
+    padding: 8rpx 24rpx;
+    border: 2rpx solid #07c160;
+    border-radius: 28rpx;
+    font-size: 24rpx;
+    color: #07c160;
+    background: #fff;
+
+    &.follow-btn-active {
+      color: #999;
+      border-color: #ccc;
+      background: #f5f5f5;
+    }
+  }
+}
+
 .detail-container {
-  min-height: 100vh;
   background-color: #f7f9fb;
   padding: 32rpx 32rpx calc(160rpx + env(safe-area-inset-bottom)) 32rpx;
   box-sizing: border-box;
