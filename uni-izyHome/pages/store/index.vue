@@ -66,7 +66,6 @@ export default {
 
 <style lang="scss" scoped>
 .store-master-container {
-  min-height: 100vh;
   background-color: #f7f9fb;
   box-sizing: border-box;
 

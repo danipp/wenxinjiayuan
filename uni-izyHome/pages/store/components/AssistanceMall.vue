@@ -27,8 +27,7 @@
       class="goods-list-scroll"
       @scrolltolower="loadMore"
     >
-      <!-- 顶部轮播图 -->
-      <view class="banner-box">
+      <!-- <view class="banner-box">
         <u-swiper
           :list="bannerList"
           keyName="image"
@@ -40,7 +39,6 @@
         ></u-swiper>
       </view>
 
-      <!-- 广播通知栏 -->
       <view class="notice-box">
         <u-notice-bar
           :text="noticeText"
@@ -51,7 +49,6 @@
         ></u-notice-bar>
       </view>
 
-      <!-- 4个统计卡片网格 -->
       <view class="stats-grid">
         <view class="stat-card bg-green">
           <text class="title">爱心联盟商家</text>
@@ -81,9 +78,8 @@
             <text class="unit">件</text>
           </view>
         </view>
-      </view>
+      </view> -->
 
-      <!-- 金刚区 -->
       <view class="kingkong-box">
         <view
           class="kingkong-item"
