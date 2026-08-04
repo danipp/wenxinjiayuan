@@ -15,7 +15,10 @@
     </view>
 
     <!-- 2. 内容区 -->
-    <view class="main-content-body" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
+    <view
+      class="main-content-body"
+      :style="{ paddingTop: statusBarHeight + 44 + 'px' }"
+    >
       <!-- 一级分类导航（全屏等宽） -->
       <SpecialCategoryNav
         :categories="level1Categories"
@@ -34,26 +37,28 @@
         />
 
         <!-- 右侧店铺列表（含筛选 Bar + 分页列表） -->
-        <SpecialShopList
-          ref="shopList"
-          :shopList="shopItems"
-          :loading="shopLoading"
-          :noMore="shopNoMore"
-          :headerHeight="navAndHeaderTotalHeightPx"
-          @go-detail="goToShopDetail"
-          @filter-change="handleFilterChange"
-          @load-more="loadMoreShops"
-        />
+        <view style="flex: 1">
+          <SpecialShopList
+            ref="shopList"
+            :shopList="shopItems"
+            :loading="shopLoading"
+            :noMore="shopNoMore"
+            :headerHeight="navAndHeaderTotalHeightPx"
+            @go-detail="goToShopDetail"
+            @filter-change="handleFilterChange"
+            @load-more="loadMoreShops"
+          />
+        </view>
       </view>
     </view>
   </view>
 </template>
 
 <script>
-import SpecialCategoryNav from './components/SpecialCategoryNav.vue';
-import SpecialSidebar from './components/SpecialSidebar.vue';
-import SpecialShopList from './components/SpecialShopList.vue';
-import { getCategoryTree, shopList } from '@/api/special.js';
+import SpecialCategoryNav from "./components/SpecialCategoryNav.vue";
+import SpecialSidebar from "./components/SpecialSidebar.vue";
+import SpecialShopList from "./components/SpecialShopList.vue";
+import { getCategoryTree, shopList } from "@/api/special.js";
 
 export default {
   components: {
@@ -64,7 +69,7 @@ export default {
   data() {
     return {
       statusBarHeight: 44,
-      searchKeyword: '',
+      searchKeyword: "",
 
       // 分类数据（从接口获取）
       treeData: [],
@@ -79,11 +84,11 @@ export default {
       shopNoMore: false,
 
       // 排序与筛选
-      currentSort: '',
+      currentSort: "",
       currentHighRating: false,
       currentIsNew: false,
 
-      communityId: '',
+      communityId: "",
     };
   },
   computed: {
@@ -91,17 +96,18 @@ export default {
       return this.treeData.map((c) => ({
         categoryId: c.categoryId,
         name: c.name,
-        icon: c.icon || '',
+        icon: c.icon || "",
       }));
     },
     currentSubCategories() {
-      if (this.treeData.length === 0) return [{ name: '全部', categoryId: null }];
+      if (this.treeData.length === 0)
+        return [{ name: "全部", categoryId: null }];
       const cat1 = this.treeData[this.active1Idx];
       if (!cat1 || !cat1.children || cat1.children.length === 0) {
-        return [{ name: '全部', categoryId: null }];
+        return [{ name: "全部", categoryId: null }];
       }
       return [
-        { name: '全部', categoryId: null },
+        { name: "全部", categoryId: null },
         ...cat1.children.map((c) => ({
           name: c.name,
           categoryId: c.categoryId,
@@ -126,9 +132,9 @@ export default {
   onLoad() {
     const sys = uni.getSystemInfoSync();
     this.statusBarHeight = sys.statusBarHeight || 44;
-    uni.setNavigationBarTitle({ title: '社区特惠' });
+    uni.setNavigationBarTitle({ title: "社区特惠" });
 
-    const community = uni.getStorageSync('selected_community');
+    const community = uni.getStorageSync("selected_community");
     if (community && community.communityId) {
       this.communityId = community.communityId;
     }
@@ -142,13 +148,15 @@ export default {
         const res = await getCategoryTree({
           communityId: this.communityId || undefined,
         });
-        if (res.code === '00000' && Array.isArray(res.data)) {
-          this.treeData = res.data.sort((a, b) => (a.sort || 0) - (b.sort || 0));
+        if (res.code === "00000" && Array.isArray(res.data)) {
+          this.treeData = res.data.sort(
+            (a, b) => (a.sort || 0) - (b.sort || 0)
+          );
           // 自动加载第一个分类的店铺
           this.fetchShops();
         }
       } catch (e) {
-        uni.showToast({ title: '加载分类失败', icon: 'none' });
+        uni.showToast({ title: "加载分类失败", icon: "none" });
       }
     },
 
@@ -176,29 +184,30 @@ export default {
         if (this.currentIsNew) payload.isNew = true;
 
         const res = await shopList(payload);
-        if (res.code === '00000' && res.data) {
+        if (res.code === "00000" && res.data) {
           const { content = [], last } = res.data;
           const mapped = content.map((item) => ({
             id: item.shopId || item.id,
-            title: item.name || '',
-            image: item.coverImage || item.logo || '',
+            title: item.name || "",
+            image: item.coverImage || item.logo || "",
             price: item.startPrice || 0,
             sales: item.monthlySales || 0,
-            rating: typeof item.rating === 'number' ? item.rating.toFixed(1) : (item.rating || '0'),
+            rating:
+              typeof item.rating === "number"
+                ? item.rating.toFixed(1)
+                : item.rating || "0",
             isNew: item.isNew || false,
-            address: item.address || '',
-            phone: item.phone || '',
-            description: item.description || '',
+            address: item.address || "",
+            phone: item.phone || "",
+            description: item.description || "",
             goodsCount: item.goodsCount || 0,
             fansCount: item.fansCount || 0,
           }));
-          this.shopItems = append
-            ? this.shopItems.concat(mapped)
-            : mapped;
+          this.shopItems = append ? this.shopItems.concat(mapped) : mapped;
           this.shopNoMore = last !== false;
         }
       } catch (e) {
-        uni.showToast({ title: '加载店铺失败', icon: 'none' });
+        uni.showToast({ title: "加载店铺失败", icon: "none" });
       } finally {
         this.shopLoading = false;
       }
@@ -228,11 +237,11 @@ export default {
 
     // -------- 排序 / 筛选 --------
     handleFilterChange({ type, value }) {
-      if (type === 'sort') {
+      if (type === "sort") {
         this.currentSort = value;
-      } else if (type === 'highRating') {
+      } else if (type === "highRating") {
         this.currentHighRating = value;
-      } else if (type === 'isNew') {
+      } else if (type === "isNew") {
         this.currentIsNew = value;
       }
       this.fetchShops();
