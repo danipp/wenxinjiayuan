@@ -15,8 +15,17 @@
               :src="item.image"
               mode="aspectFill"
             ></image>
-            <view class="type-badge" :class="item.payType">
-              {{ item.payType === "pure" ? "纯积分兑换" : "积分+现金" }}
+            <view
+              class="type-badge"
+              :class="item.payType == 1 ? 'pure' : 'mix'"
+            >
+              {{
+                item.payType === 1
+                  ? "积分兑换"
+                  : item.payType === 3
+                  ? "积分+现金"
+                  : "现金购买"
+              }}
             </view>
           </view>
 
@@ -75,21 +84,25 @@ export default {
         });
         const pageData = res.data || {};
         const list = pageData.content || [];
-        const isLast = pageData.last !== undefined ? pageData.last : list.length < this.pageSize;
+        const isLast =
+          pageData.last !== undefined
+            ? pageData.last
+            : list.length < this.pageSize;
 
         const mapped = list.map((item) => ({
           id: item.targetId,
           collectionId: item.collectionId,
           // 列表只返回 collection 基本信息，商品详情需要额外加载
-          title: "",
-          payType: "pure",
-          pointsPrice: 0,
-          cashPrice: 0,
-          sales: 0,
-          image: "",
+          title: item.goods?.title,
+          payType: item.goods?.goodsType,
+          pointsPrice: item.goods?.pointsPrice,
+          cashPrice: item.goods?.cashPrice,
+          sales: item.goods?.salesCount,
+          image: item.goods?.coverImage,
         }));
 
-        this.goodsList = this.pageNum === 1 ? mapped : [...this.goodsList, ...mapped];
+        this.goodsList =
+          this.pageNum === 1 ? mapped : [...this.goodsList, ...mapped];
         this.noMore = isLast;
         if (!isLast) this.pageNum++;
       } catch (e) {

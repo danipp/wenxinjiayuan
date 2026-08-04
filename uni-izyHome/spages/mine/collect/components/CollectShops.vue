@@ -3,12 +3,7 @@
     <scroll-view scroll-y class="list-scroll-view" @scrolltolower="loadMore">
       <view class="shop-list" v-if="shopList.length > 0">
         <!-- 店铺卡片结构 -->
-        <view
-          v-for="shop in shopList"
-          :key="shop.id"
-          class="shop-card"
-          @click="goShopHome(shop.id)"
-        >
+        <view v-for="shop in shopList" :key="shop.id" class="shop-card">
           <!-- 头像与名称 -->
           <view class="card-left">
             <image
@@ -19,19 +14,27 @@
             <view class="shop-info">
               <view class="title-row">
                 <text class="shop-name text-ellipsis">{{ shop.name }}</text>
-                <text class="volunteer-tag">爱心店主</text>
+                <text
+                  class="volunteer-tag"
+                  :class="{
+                    'tag-green': shop.status == 1,
+                    'tag-gray': shop.status == 2,
+                  }"
+                >
+                  {{ shop.status == 1 ? "营业中" : "已歇业" }}
+                </text>
               </view>
               <view class="stats-row">
-                <text class="stat-text">粉丝 {{ shop.fans }}</text>
-                <text class="divider">|</text>
                 <text class="stat-text">月销 {{ shop.sales }} 件</text>
               </view>
             </view>
           </view>
 
           <!-- 右侧：高保真胶囊跳转按钮 -->
-          <view class="card-right">
-            <button class="enter-btn">进入店铺</button>
+          <view class="card-right" @click="goShopHome(shop)">
+            <button class="enter-btn" :class="{ 'btn-gray': shop.status == 2 }">
+              {{ shop.status == 1 ? "进入店铺" : "已下架" }}
+            </button>
           </view>
         </view>
       </view>
@@ -73,18 +76,22 @@ export default {
         });
         const pageData = res.data || {};
         const list = pageData.content || [];
-        const isLast = pageData.last !== undefined ? pageData.last : list.length < this.pageSize;
+        const isLast =
+          pageData.last !== undefined
+            ? pageData.last
+            : list.length < this.pageSize;
 
         const mapped = list.map((item) => ({
           id: item.targetId,
           collectionId: item.collectionId,
-          name: "",
-          avatar: "",
-          fans: "0",
-          sales: 0,
+          name: item.shop.name,
+          avatar: item.shop.logo,
+          status: item.shop.status,
+          sales: item.shop.monthlySales,
         }));
 
-        this.shopList = this.pageNum === 1 ? mapped : [...this.shopList, ...mapped];
+        this.shopList =
+          this.pageNum === 1 ? mapped : [...this.shopList, ...mapped];
         this.noMore = isLast;
         if (!isLast) this.pageNum++;
       } catch (e) {
@@ -93,8 +100,9 @@ export default {
         this.loading = false;
       }
     },
-    goShopHome(id) {
-      uni.navigateTo({ url: `/spages/store/shop/index?shopId=${id}` });
+    goShopHome(shop) {
+      if (shop.status == 2) return;
+      uni.navigateTo({ url: `/spages/store/shop/index?shopId=${shop.id}` });
     },
     loadMore() {
       if (!this.loading && !this.noMore) {
@@ -179,6 +187,13 @@ export default {
             padding: 4rpx 12rpx;
             border-radius: 8rpx;
             white-space: nowrap;
+            &.tag-green {
+              background-color: #eff6ff;
+            }
+            &.tag-gray {
+              background-color: #eff6ff;
+              color: #94a3b8;
+            }
           }
         }
 
@@ -220,6 +235,10 @@ export default {
 
         &:active {
           background-color: #e8f9f0;
+        }
+        &.btn-gray {
+          border: 2rpx solid #94a3b8;
+          color: #94a3b8;
         }
       }
     }
