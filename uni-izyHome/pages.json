@@ -246,6 +246,12 @@
           }
         },
         {
+          "path": "special/shop/comments",
+          "style": {
+            "navigationBarTitleText": "店铺评价"
+          }
+        },
+        {
           "path": "assist/donation/index",
           "style": {
             "navigationBarTitleText": "捐赠申请"

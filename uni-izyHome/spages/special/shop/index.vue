@@ -2,35 +2,43 @@
   <view class="shop-detail-container">
     <!-- 1. 顶部店铺荣誉头图 -->
     <view class="shop-hero-banner">
-      <image class="banner-bg" :src="shopInfo.image" mode="aspectFill"></image>
+      <image
+        class="banner-bg"
+        :src="shopInfo.coverImage || shopInfo.logo"
+        mode="aspectFill"
+      ></image>
       <view class="banner-overlay"></view>
       <view class="shop-header-info">
         <view class="title-row">
-          <text class="shop-name">{{ shopInfo.title }}</text>
+          <text class="shop-name">{{ shopInfo.name }}</text>
           <text class="special-badge">特惠合作店</text>
         </view>
         <view class="stats-row">
-          <!-- <text class="stat-text">关注收藏 {{ shopInfo.collects }}</text>
+          <text class="stat-text"
+            >月销量 {{ shopInfo.monthlySales || 0 }} 件</text
+          >
           <text class="divider">|</text>
-          <text class="stat-text">粉丝 {{ shopInfo.fans }}</text>
-          <text class="divider">|</text> -->
-          <text class="stat-text">月销量 {{ shopInfo.sales }} 件</text>
+          <text class="stat-text">评分 {{ ratingText }}</text>
+          <text class="divider">|</text>
+          <text class="stat-text">粉丝 {{ shopInfo.fansCount || 0 }}</text>
         </view>
       </view>
     </view>
 
     <view class="scroll-body-content">
-      <!-- 2. 店铺地址一栏 (集成微信原生 openLocation 物理导航) -->
+      <!-- 2. 店铺地址 -->
       <view class="address-card" @click="handleOpenMap">
         <view class="address-left">
           <u-icon name="map-fill" color="#ff4d4f" size="32rpx"></u-icon>
-          <text class="address-text text-ellipsis">{{ shopInfo.address }}</text>
+          <text class="address-text text-ellipsis">{{
+            shopInfo.address || "暂无地址"
+          }}</text>
         </view>
         <u-icon name="arrow-right" color="#cbd5e1" size="24rpx"></u-icon>
       </view>
 
-      <!-- 3. 本店特惠专享券 (点击即可一键秒领，高亮改变状态) -->
-      <view class="coupon-section">
+      <!-- 3. 优惠券 -->
+      <view class="coupon-section" v-if="couponList.length > 0">
         <text class="section-title">店铺代金券</text>
         <scroll-view scroll-x class="coupon-scroll" :show-scrollbar="false">
           <view class="coupon-row">
@@ -39,14 +47,14 @@
               :key="cIdx"
               class="coupon-card"
               :class="{ 'coupon-claimed': c.claimed }"
-              @click="claimCoupon(cIdx)"
+              @click="handleClaimCoupon(c, cIdx)"
             >
               <view class="coupon-left">
                 <text class="symbol">￥</text>
                 <text class="money">{{ c.money }}</text>
               </view>
               <view class="coupon-right">
-                <text class="title">{{ c.title }}</text>
+                <text class="ctitle">{{ c.title }}</text>
                 <text class="btn">{{ c.claimed ? "已领取" : "一键领" }}</text>
               </view>
             </view>
@@ -54,21 +62,30 @@
         </scroll-view>
       </view>
 
-      <!-- 4. 本店在售特惠服务项目列表 -->
-      <view class="services-list-section" v-if="serviceItems.length">
-        <text class="section-title">特惠服务项目</text>
+      <!-- 4. 特惠服务项目 -->
+      <view class="services-list-section" v-if="serviceItems.length > 0">
+        <view class="section-header">
+          <text class="section-title">特惠服务项目</text>
+          <text class="section-count">共 {{ serviceItems.length }} 件</text>
+        </view>
         <view class="services-list">
           <view
             v-for="item in serviceItems"
-            :key="item.id"
+            :key="item.goodsId"
             class="service-item-row"
             @click="handleServiceBuy(item)"
           >
-            <image class="s-cover" :src="item.image" mode="aspectFill"></image>
+            <image
+              class="s-cover"
+              :src="item.coverImage"
+              mode="aspectFill"
+            ></image>
             <view class="s-right-info">
               <text class="s-title text-ellipsis-2">{{ item.title }}</text>
               <view class="s-price-row">
-                <text class="s-price">￥{{ item.price }}</text>
+                <text class="s-price"
+                  >¥{{ item.cashPrice || item.originalPrice || 0 }}</text
+                >
                 <button class="s-buy-btn">抢购</button>
               </view>
             </view>
@@ -76,18 +93,35 @@
         </view>
       </view>
 
-      <!-- 5. 用户好评模块 -->
-      <view class="review-section">
-        <text class="section-title">顾客好评</text>
+      <!-- 5. 顾客好评 -->
+      <view class="review-section" v-if="reviews.length > 0">
+        <view class="section-header">
+          <text class="section-title">顾客好评</text>
+          <view class="section-actions" @click="goToAllReviews">
+            <text class="more-link" v-if="reviewCount > 2"
+              >查看全部 {{ reviewCount }} 条</text
+            >
+            <u-icon name="arrow-right" color="#94a3b8" size="12"></u-icon>
+          </view>
+        </view>
         <view class="review-list">
-          <view v-for="(r, rIdx) in reviews" :key="rIdx" class="review-card">
+          <view
+            v-for="(r, rIdx) in reviews.slice(0, 2)"
+            :key="rIdx"
+            class="review-card"
+          >
             <view class="review-header">
-              <image class="r-avatar" :src="r.avatar" mode="aspectFill"></image>
+              <u-avatar
+                class="r-avatar"
+                :src="r.userAvatar"
+                size="54rpx"
+                mode="aspectFill"
+              ></u-avatar>
               <view class="r-user-info">
-                <text class="r-username">{{ r.name }}</text>
-                <text class="r-time">{{ r.time }}</text>
+                <text class="r-username">{{ r.userName }}</text>
+                <text class="r-time">{{ formatTime(r.createTime) }}</text>
               </view>
-              <text class="r-stars">⭐️⭐️⭐️⭐️⭐️</text>
+              <text class="r-stars">{{ starsText(r.rating) }}</text>
             </view>
             <text class="review-text">{{ r.content }}</text>
           </view>
@@ -97,7 +131,6 @@
 
     <!-- 6. 底部固定工具栏 -->
     <view class="footer-action-bar">
-      <!-- 分享 -->
       <view class="footer-share-wrapper">
         <view class="share-icon-circle">
           <u-icon name="share" color="#3b6de6" size="24"></u-icon>
@@ -106,97 +139,133 @@
         <button class="transparent-share-btn" open-type="share"></button>
       </view>
 
-      <!-- 打电话 -->
+      <view class="footer-btn-review" @click="goWriteReview">
+        <text>写评价</text>
+      </view>
+
       <button class="footer-phone-btn" @click="handleCall">
         <u-icon name="phone-fill" color="#ffffff" size="24"></u-icon>
         <text>拨打电话</text>
       </button>
     </view>
+
+    <!-- 全部评价弹窗 -->
+    <AllReviewsPopup
+      :show.sync="showAllReviews"
+      :shopId="shopId"
+      :totalCount="reviewCount"
+    />
   </view>
 </template>
 
 <script>
+import AllReviewsPopup from './components/AllReviewsPopup.vue';
+import { shopDetail, claimCoupon } from "@/spages/api/special.js";
+
 export default {
+  components: { AllReviewsPopup },
   data() {
     return {
-      shopInfo: {
-        id: 401,
-        title: "厨卫下水道 / 马桶深度清洁惠民小铺",
-        image:
-          "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=400&q=80",
-        collects: 184,
-        fans: "1,241",
-        sales: 580,
-        address: "广州市越秀区青菜岗43号启东楼",
-        // 绑定真实的地图选点经纬度 (目澜社区坐标示例)
-        latitude: 23.12908,
-        longitude: 113.26436,
-        phone: "13812345678",
-      },
-      // 优惠券
-      couponList: [
-        { money: 10, title: "满100元可用", claimed: false },
-        { money: 5, title: "社区新人礼", claimed: false },
-      ],
-      // 店内特惠服务项目
-      serviceItems: [
-        // { id: 40101, title: '厨卫管道高压深度清洗、马桶/洗手池除垢除味套餐', price: 98, image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=400&q=80' },
-        // { id: 40102, title: '管道堵塞应急疏通、强力管道防返味密封圈更换', price: 58, image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80' }
-      ],
-      // 真实评价
-      reviews: [
-        {
-          name: "石头",
-          avatar: "https://cdn.uviewui.com/uview/album/1.jpg",
-          time: "1天前",
-          content:
-            "师傅上门速度非常快，管道清洗得很干净，还帮忙把周边的卫生擦了，服务态度太棒了。",
-        },
-        {
-          name: "秉治",
-          avatar: "https://cdn.uviewui.com/uview/album/2.jpg",
-          time: "3天前",
-          content:
-            "价格真的很实惠，比外面随便找的便宜一大截，属于咱社区自己的实惠！",
-        },
-      ],
+      shopId: null,
+      loading: false,
+      shopInfo: {},
+      couponList: [],
+      serviceItems: [],
+      reviews: [],
+      reviewCount: 0,
+      showAllReviews: false,
+      communityId: "",
     };
   },
-  onLoad() {},
+  computed: {
+    ratingText() {
+      const r = this.shopInfo.rating;
+      return r != null ? Number(r).toFixed(1) : "0.0";
+    },
+  },
+  onLoad(options) {
+    this.shopId = options.id;
+    const community = uni.getStorageSync("selected_community");
+    if (community && community.communityId) {
+      this.communityId = community.communityId;
+    }
+  },
+  onShow() {
+    if (this.shopId) {
+      this.fetchDetail();
+    }
+  },
   onShareAppMessage() {
     return {
-      title: this.shopInfo.title,
-      path: `/spages/special/shop/index?id=${this.shopInfo.id}`,
+      title: this.shopInfo.name || "特惠店铺",
+      path: `/spages/special/shop/index?id=${this.shopId}`,
     };
   },
   methods: {
-    // 微信地理位置原生唤醒导航
-    handleOpenMap() {
-      uni.openLocation({
-        latitude: this.shopInfo.latitude,
-        longitude: this.shopInfo.longitude,
-        name: this.shopInfo.title,
-        address: this.shopInfo.address,
-      });
+    async fetchDetail() {
+      this.loading = true;
+      try {
+        const res = await shopDetail(this.shopId);
+        if (res.code === "00000" && res.data) {
+          const d = res.data;
+          this.shopInfo = d.shopInfo || {};
+          this.couponList = d.couponList || [];
+          this.serviceItems = d.serviceItems || [];
+          this.reviews = d.reviews || [];
+          this.reviewCount = d.reviewCount || 0;
+        } else {
+          uni.showToast({ title: res.msg || "加载失败", icon: "none" });
+        }
+      } catch (e) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
+        this.loading = false;
+      }
     },
-    // 一键秒领优惠券
-    claimCoupon(index) {
-      const c = this.couponList[index];
+
+    // 领取优惠券
+    async handleClaimCoupon(c, idx) {
       if (c.claimed) return;
-      c.claimed = true;
-      uni.showToast({ title: "代金券领取成功！", icon: "success" });
+      try {
+        const res = await claimCoupon(c.couponId);
+        if (res.code === "00000") {
+          this.couponList[idx].claimed = true;
+          uni.showToast({ title: "领取成功！", icon: "success" });
+        } else {
+          uni.showToast({ title: res.msg || "领取失败", icon: "none" });
+        }
+      } catch (e) {
+        uni.showToast({ title: "领取失败", icon: "none" });
+      }
     },
-    // 唤起物理拨号
+
+    handleOpenMap() {
+      const { latitude, longitude, name, address } = this.shopInfo;
+      if (latitude && longitude) {
+        uni.openLocation({
+          latitude,
+          longitude,
+          name: name || "",
+          address: address || "",
+        });
+      }
+    },
+
     handleCall() {
-      uni.makePhoneCall({
-        phoneNumber: this.shopInfo.phone,
-      });
+      const phone = this.shopInfo.phone;
+      if (phone) {
+        uni.makePhoneCall({ phoneNumber: phone });
+      } else {
+        uni.showToast({ title: "暂无联系电话", icon: "none" });
+      }
     },
-    // 点击抢购服务
+
     handleServiceBuy(item) {
       uni.showModal({
         title: "抢购确认",
-        content: `确定以优惠价 ¥${item.price} 抢购“${item.title}”服务吗？`,
+        content: `确定以优惠价 ¥${
+          item.cashPrice || item.originalPrice || 0
+        } 抢购"${item.title}"服务吗？`,
         confirmColor: "#ff4d4f",
         success: (res) => {
           if (res.confirm) {
@@ -205,14 +274,42 @@ export default {
               uni.hideLoading();
               uni.showModal({
                 title: "抢购成功！🎉",
-                content:
-                  "您的服务券码已发送，请凭“我的 - 我的活动”中的核销凭证在服务上门时出示。",
+                content: "您的服务券码已发送，请凭核销凭证在服务上门时出示。",
                 showCancel: false,
               });
             }, 600);
           }
         },
       });
+    },
+
+    // 写评价
+    goWriteReview() {
+      const name = encodeURIComponent(this.shopInfo.name || "");
+      uni.navigateTo({
+        url: `/spages/special/shop/comments?id=${this.shopId}&name=${name}`,
+      });
+    },
+
+    // 查看全部评价
+    goToAllReviews() {
+      this.showAllReviews = true;
+    },
+
+    // 星级文字
+    starsText(rating) {
+      const n = rating || 5;
+      return "⭐️".repeat(Math.min(n, 5));
+    },
+
+    formatTime(str) {
+      if (!str) return "";
+      const d = new Date(str.replace(/-/g, "/"));
+      if (isNaN(d.getTime())) return str;
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
+        d.getHours()
+      )}:${pad(d.getMinutes())}`;
     },
   },
 };
@@ -225,7 +322,6 @@ export default {
   padding-bottom: calc(110rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 
-  /* 1. 店铺大图 */
   .shop-hero-banner {
     width: 100%;
     height: 280rpx;
@@ -314,7 +410,34 @@ export default {
     display: block;
   }
 
-  /* 2. 地址栏 */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16rpx;
+
+    .section-title {
+      margin-bottom: 0;
+    }
+
+    .section-count {
+      font-size: 22rpx;
+      color: #94a3b8;
+    }
+
+    .section-actions {
+      display: flex;
+      align-items: center;
+      gap: 4rpx;
+
+      .more-link {
+        font-size: 22rpx;
+        color: #94a3b8;
+      }
+    }
+  }
+
+  /* 地址栏 */
   .address-card {
     background-color: #ffffff;
     border-radius: 16rpx;
@@ -339,7 +462,7 @@ export default {
     }
   }
 
-  /* 3. 优惠券 */
+  /* 优惠券 */
   .coupon-section {
     display: flex;
     flex-direction: column;
@@ -354,7 +477,6 @@ export default {
       gap: 16rpx;
     }
 
-    /* 精美双耳圆角券 */
     .coupon-card {
       display: inline-flex;
       background: linear-gradient(135deg, #fff1f0 0%, #ffe8e6 100%);
@@ -365,7 +487,6 @@ export default {
       height: 88rpx;
       width: 240rpx;
       position: relative;
-      cursor: pointer;
 
       .coupon-left {
         width: 80rpx;
@@ -393,7 +514,7 @@ export default {
         justify-content: center;
         padding-left: 12rpx;
 
-        .title {
+        .ctitle {
           font-size: 16rpx;
           color: #ff4d4f;
           font-weight: bold;
@@ -407,7 +528,6 @@ export default {
         }
       }
 
-      /* 已经领取置灰状态 */
       &.coupon-claimed {
         background: #f1f5f9;
         border-color: #cbd5e1;
@@ -416,7 +536,7 @@ export default {
           background-color: #94a3b8;
         }
         .coupon-right {
-          .title {
+          .ctitle {
             color: #94a3b8;
           }
           .btn {
@@ -427,11 +547,8 @@ export default {
     }
   }
 
-  /* 4. 特惠项目列表 */
+  /* 特惠项目列表 */
   .services-list-section {
-    display: flex;
-    flex-direction: column;
-
     .services-list {
       display: flex;
       flex-direction: column;
@@ -498,11 +615,8 @@ export default {
     }
   }
 
-  /* 5. 顾客好评 */
+  /* 顾客好评 */
   .review-section {
-    display: flex;
-    flex-direction: column;
-
     .review-list {
       display: flex;
       flex-direction: column;
@@ -531,7 +645,7 @@ export default {
           display: flex;
           flex-direction: column;
           flex: 1;
-
+          margin-left: 10rpx;
           .r-username {
             font-size: 22rpx;
             font-weight: bold;
@@ -558,7 +672,7 @@ export default {
     }
   }
 
-  /* 6. 底部固定操作栏 */
+  /* 底部固定操作栏 */
   .footer-action-bar {
     position: fixed;
     bottom: 0;
@@ -570,22 +684,20 @@ export default {
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    gap: 20rpx;
+    gap: 16rpx;
     z-index: 100;
 
-    /* 分享 - 大版图标按钮 */
     .footer-share-wrapper {
-      flex: 1;
+      flex: 2;
       height: 88rpx;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12rpx;
+      gap: 8rpx;
       background-color: #f0f5ff;
       border: 2rpx solid #d6e4ff;
       border-radius: 44rpx;
       position: relative;
-      cursor: pointer;
 
       .share-icon-circle {
         width: 44rpx;
@@ -599,7 +711,7 @@ export default {
       }
 
       .footer-label {
-        font-size: 26rpx;
+        font-size: 24rpx;
         font-weight: bold;
         color: #3b6de6;
       }
@@ -619,21 +731,33 @@ export default {
       }
     }
 
-    /* 拨打电话 - 红色按钮 */
-    .footer-phone-btn {
+    .footer-btn-review {
       flex: 1;
+      height: 88rpx;
+      line-height: 88rpx;
+      background-color: #fff1f0;
+      color: #ff4d4f;
+      border-radius: 44rpx;
+      font-size: 24rpx;
+      font-weight: bold;
+      text-align: center;
+      border: 2rpx solid #ffa39e;
+    }
+
+    .footer-phone-btn {
+      flex: 2;
       height: 88rpx;
       line-height: 88rpx;
       background: linear-gradient(135deg, #ff7875 0%, #ff4d4f 100%);
       color: #ffffff;
-      font-size: 26rpx;
+      font-size: 24rpx;
       font-weight: bold;
       border-radius: 44rpx;
       box-shadow: 0 4rpx 16rpx rgba(255, 77, 79, 0.25);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10rpx;
+      gap: 8rpx;
 
       &::after {
         border: none;
