@@ -172,6 +172,7 @@ export default {
           phone: this.form.phone,
           address: this.form.address,
           description: this.form.intro,
+          detailAddress: this.form.detailAddress,
         };
         // 编辑时传 shopId
         if (this.shopId) {
