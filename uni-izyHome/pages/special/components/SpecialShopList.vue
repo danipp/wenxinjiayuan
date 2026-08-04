@@ -1,55 +1,46 @@
 <template>
-  <!-- 核心修复：硬性绑定 calc(100vh - headerHeight)，彻底解除 @scrolltolower 触底失效 Bug -->
-  <scroll-view 
-    scroll-y 
-    class="content-right-col" 
+  <scroll-view
+    scroll-y
+    class="content-right-col"
     :style="{ height: 'calc(100vh - ' + headerHeight + 'px)' }"
-    @scrolltolower="handleLoadMore"
+    @scrolltolower="$emit('load-more')"
   >
-    <!-- 1. 重构：多维自由筛选过滤栏（非互斥单选，各自拥有独立状态开关） -->
+    <!-- 多维筛选栏 -->
     <view class="sort-filter-bar">
-      <!-- 销量筛选按钮 -->
-      <view 
-        class="filter-tag-btn" 
-        :class="{ 'tag-active': isSalesFiltered }"
-        @click="toggleSalesFilter"
+      <view
+        class="filter-tag-btn"
+        :class="{ 'tag-active': sortMode !== '' }"
+        @click="toggleSort"
       >
-        销量高
-      </view>
-      
-      <!-- 价格升降序切换 -->
-      <view 
-        class="filter-tag-btn" 
-        :class="{ 'tag-active': priceOrder !== 'none' }"
-        @click="togglePriceSort"
-      >
-        价格 <text class="arrow">{{ priceOrder === 'asc' ? '↑' : (priceOrder === 'desc' ? '↓' : '↕') }}</text>
+        销量 <text class="arrow">{{ sortMode === 'sales' ? '↓' : '↕' }}</text>
       </view>
 
-      <!-- 推荐开关 -->
-      <view 
-        class="filter-tag-btn" 
-        :class="{ 'tag-active': isRatingFiltered }"
-        @click="isRatingFiltered = !isRatingFiltered"
+      <view
+        class="filter-tag-btn"
+        :class="{ 'tag-active': priceOrder !== '' }"
+        @click="togglePrice"
       >
-        高评分
+        价格 <text class="arrow">{{ priceOrder === 'price_asc' ? '↑' : priceOrder === 'price_desc' ? '↓' : '↕' }}</text>
       </view>
 
-      <!-- 新品开关 -->
-      <view 
-        class="filter-tag-btn" 
+      <view
+        class="filter-tag-btn"
+        :class="{ 'tag-active': highRating }"
+        @click="toggleHighRating"
+      >高评分</view>
+
+      <view
+        class="filter-tag-btn"
         :class="{ 'tag-active': isNewOnly }"
-        @click="isNewOnly = !isNewOnly"
-      >
-        新品
-      </view>
+        @click="toggleNew"
+      >新品</view>
     </view>
 
-    <!-- 2. 动态渲染店铺列表 -->
-    <view class="shop-list-wrapper" v-if="processedShops.length > 0">
-      <view 
-        v-for="shop in processedShops" 
-        :key="shop.id" 
+    <!-- 店铺列表 -->
+    <view class="shop-list-wrapper" v-if="shopList.length > 0">
+      <view
+        v-for="shop in shopList"
+        :key="shop.id"
         class="shop-row-card"
         @click="$emit('go-detail', shop.id)"
       >
@@ -68,17 +59,18 @@
         </view>
       </view>
 
-      <!-- 分页加载指示 -->
       <view class="load-more-tips">
-        <text v-if="loading">加载中...</text>
-        <text v-else class="no-more">已经是最后一页了</text>
+        <view v-if="loading" class="loading-tip-inner">
+          <u-loading-icon></u-loading-icon>
+          <text>加载中...</text>
+        </view>
+        <text v-else-if="noMore" class="no-more">已加载全部</text>
       </view>
     </view>
 
-    <!-- 缺省页 -->
     <view v-else class="empty-state">
       <u-icon name="empty-list" color="#cbd5e1" size="100rpx"></u-icon>
-      <text class="empty-text">该条件下暂无匹配店铺</text>
+      <text class="empty-text">暂无匹配店铺</text>
     </view>
   </scroll-view>
 </template>
@@ -87,70 +79,71 @@
 export default {
   props: {
     shopList: { type: Array, default: () => [] },
-    headerHeight: { type: Number, default: 120 }
+    loading: { type: Boolean, default: false },
+    noMore: { type: Boolean, default: false },
+    headerHeight: { type: Number, default: 120 },
   },
   data() {
     return {
-      // 独立自由过滤状态（非排他单选）
-      isSalesFiltered: false,  // 是否过滤销量>100
-      priceOrder: 'none',      // 'none', 'asc', 'desc'
-      isRatingFiltered: false, // 是否过滤评分>=4.8
-      isNewOnly: false,        // 是否只看新品
-      
-      loading: false,
-      page: 1
+      sortMode: '',     // 'sales' | ''
+      priceOrder: '',    // 'price_asc' | 'price_desc' | ''
+      highRating: false,
+      isNewOnly: false,
     };
   },
-  computed: {
-    // 动态计算多维筛选后的店铺列表
-    processedShops() {
-      let list = [...this.shopList];
-
-      // 1. 销量过滤
-      if (this.isSalesFiltered) {
-        list = list.filter(s => s.sales >= 100);
-      }
-
-      // 2. 评分过滤
-      if (this.isRatingFiltered) {
-        list = list.filter(s => Number(s.rating) >= 4.8);
-      }
-
-      // 3. 新品过滤
-      if (this.isNewOnly) {
-        list = list.filter(s => s.isNew);
-      }
-
-      // 4. 价格排序
-      if (this.priceOrder === 'asc') {
-        list.sort((a, b) => a.price - b.price);
-      } else if (this.priceOrder === 'desc') {
-        list.sort((a, b) => b.price - a.price);
-      }
-
-      return list;
-    }
-  },
   methods: {
-    toggleSalesFilter() {
-      this.isSalesFiltered = !this.isSalesFiltered;
+    // 销量排序
+    toggleSort() {
+      this.sortMode = this.sortMode === 'sales' ? '' : 'sales';
+      this.priceOrder = ''; // 互斥
+      this.emitFilters();
     },
-    togglePriceSort() {
-      if (this.priceOrder === 'none') this.priceOrder = 'asc';
-      else if (this.priceOrder === 'asc') this.priceOrder = 'desc';
-      else this.priceOrder = 'none';
+    // 价格排序
+    togglePrice() {
+      if (this.priceOrder === '') {
+        this.priceOrder = 'price_asc';
+      } else if (this.priceOrder === 'price_asc') {
+        this.priceOrder = 'price_desc';
+      } else {
+        this.priceOrder = '';
+      }
+      this.sortMode = ''; // 互斥
+      this.emitFilters();
+    },
+    toggleHighRating() {
+      this.highRating = !this.highRating;
+      this.emitFilters();
+    },
+    toggleNew() {
+      this.isNewOnly = !this.isNewOnly;
+      this.emitFilters();
     },
 
-    // 核心：scroll-view 触底加载
-    handleLoadMore() {
-      if (this.loading) return;
-      this.loading = true;
-      setTimeout(() => {
-        this.loading = false;
-        uni.showToast({ title: '已滑动触底，加载最新店铺', icon: 'none' });
-      }, 800);
-    }
-  }
+    emitFilters() {
+      let sort = '';
+      if (this.sortMode === 'sales') sort = 'sales';
+      else if (this.priceOrder) sort = this.priceOrder;
+      // false 时不通知父组件
+      if (sort !== this._lastSort || this.highRating !== this._lastHigh || this.isNewOnly !== this._lastNew) {
+        this._lastSort = sort;
+        this._lastHigh = this.highRating;
+        this._lastNew = this.isNewOnly;
+        this.$emit('filter-change', {
+          sort,
+          highRating: this.highRating,
+          isNew: this.isNewOnly,
+        });
+      }
+    },
+  },
+  watch: {
+    // 父组件 fetchShops 重置后，本地也重置过滤
+    shopList(val, old) {
+      if (val.length === 0 && old && old.length > 0) {
+        // 可能是搜索/切换分类的结果，保持过滤状态
+      }
+    },
+  },
 };
 </script>
 
@@ -160,7 +153,6 @@ export default {
   background-color: #ffffff;
   box-sizing: border-box;
 
-  /* 自由多维筛选栏 */
   .sort-filter-bar {
     display: flex;
     align-items: center;
@@ -181,14 +173,12 @@ export default {
       padding: 6rpx 16rpx;
       border-radius: 20rpx;
       transition: all 0.2s ease;
-      cursor: pointer;
 
       .arrow {
         font-size: 18rpx;
         margin-left: 2rpx;
       }
 
-      /* 高亮激活状态 */
       &.tag-active {
         background-color: #fff1f0;
         color: #ff4d4f;
@@ -289,6 +279,13 @@ export default {
     padding: 20rpx 0;
     font-size: 22rpx;
     color: #94a3b8;
+
+    .loading-tip-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12rpx;
+    }
   }
 
   .empty-state {

@@ -1,18 +1,17 @@
 <template>
-  <!-- 修复：通过 calc 计算硬性高度，保证滚动畅通 -->
-  <scroll-view 
-    scroll-y 
+  <scroll-view
+    scroll-y
     class="sidebar-left-col"
     :style="{ height: 'calc(100vh - ' + headerHeight + 'px)' }"
   >
-    <view 
-      v-for="(sub, sIdx) in subCategories" 
-      :key="sIdx" 
+    <view
+      v-for="(sub, sIdx) in subCategories"
+      :key="sIdx"
       class="sidebar-item"
       :class="{ 'sidebar-item-active': activeIdx === sIdx }"
       @click="$emit('select', sIdx)"
     >
-      {{ sub }}
+      {{ sub.name }}
     </view>
   </scroll-view>
 </template>
@@ -20,10 +19,11 @@
 <script>
 export default {
   props: {
+    // [{ name, categoryId }]
     subCategories: { type: Array, default: () => [] },
     activeIdx: { type: Number, default: 0 },
-    headerHeight: { type: Number, default: 120 }
-  }
+    headerHeight: { type: Number, default: 120 },
+  },
 };
 </script>
 
@@ -33,7 +33,7 @@ export default {
   background-color: #f8fafc;
 
   .sidebar-item {
-    height: 110rpx; // 加高体验
+    height: 110rpx;
     line-height: 110rpx;
     text-align: center;
     font-size: 26rpx;
