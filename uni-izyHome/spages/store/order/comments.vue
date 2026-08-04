@@ -33,7 +33,6 @@
         class="review-textarea"
         placeholder-class="placeholder-style"
       ></textarea>
-      <!-- 右下角字符指示器 -->
       <view class="char-count">
         <text :class="{ 'limit-warn': content.length >= 100 }">{{
           content.length
@@ -42,7 +41,19 @@
       </view>
     </view>
 
-    <!-- 4. 底部固定提交按钮 -->
+    <!-- 4. 上传图片（非必填，最多9张） -->
+    <view class="upload-section">
+      <text class="upload-label">上传图片（非必填）</text>
+      <oss-image-upload
+        v-model="images"
+        :maxCount="9"
+        :minCount="0"
+        uploadText="上传评价图片"
+        ossPath="order/comment"
+      />
+    </view>
+
+    <!-- 5. 底部固定提交按钮 -->
     <view class="footer-bar">
       <button
         class="submit-btn"
@@ -57,19 +68,22 @@
 
 <script>
 import { create2 } from "@/spages/api/order";
+import OssImageUpload from "@/components/upload.vue";
 
 export default {
+  components: { OssImageUpload },
   data() {
     return {
       orderId: "",
       goodsTitle: "公益商品",
-      rating: 0,
+      rating: -1,
       content: "",
+      images: [],
     };
   },
   computed: {
     isFormValid() {
-      return this.rating > 0 && this.content.trim().length > 0;
+      return this.rating >= 0 && this.content.trim().length > 0;
     },
   },
   onLoad(options) {
@@ -94,10 +108,12 @@ export default {
       }
       uni.showLoading({ title: "发布评价中..." });
       try {
+        const imageUrls = this.images.map((f) => f.url);
         await create2({
           orderId: Number(this.orderId),
           rating: Number(this.rating) + 1,
           content: this.content,
+          images: imageUrls,
         });
         uni.hideLoading();
         uni.showToast({ title: "评价成功，感谢您的反馈！", icon: "success" });
@@ -213,39 +229,54 @@ export default {
       }
     }
   }
+}
 
-  /* 底部固定提交按钮 */
-  .footer-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
+.upload-section {
+  background-color: #ffffff;
+  border-radius: 24rpx;
+  padding: 24rpx 32rpx;
+  margin-top: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.015);
+
+  .upload-label {
+    font-size: 26rpx;
+    color: #718096;
+    margin-bottom: 16rpx;
+    display: block;
+  }
+}
+
+/* 底部固定提交按钮 */
+.footer-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff;
+  box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.03);
+  padding: 24rpx 48rpx calc(24rpx + env(safe-area-inset-bottom)) 48rpx;
+  box-sizing: border-box;
+  z-index: 100;
+
+  .submit-btn {
     width: 100%;
-    background-color: #ffffff;
-    box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.03);
-    padding: 24rpx 48rpx calc(24rpx + env(safe-area-inset-bottom)) 48rpx;
-    box-sizing: border-box;
-    z-index: 100;
+    height: 96rpx;
+    line-height: 96rpx;
+    background-color: #a3e9c5; // 未写内容时的未激活淡灰色
+    color: #ffffff;
+    font-size: 32rpx;
+    font-weight: bold;
+    border-radius: 48rpx; // 胶囊圆角
+    transition: background-color 0.25s ease, box-shadow 0.25s ease;
 
-    .submit-btn {
-      width: 100%;
-      height: 96rpx;
-      line-height: 96rpx;
-      background-color: #a3e9c5; // 未写内容时的未激活淡灰色
-      color: #ffffff;
-      font-size: 32rpx;
-      font-weight: bold;
-      border-radius: 48rpx; // 胶囊圆角
-      transition: background-color 0.25s ease, box-shadow 0.25s ease;
+    &::after {
+      border: none;
+    }
 
-      &::after {
-        border: none;
-      }
-
-      /* 表单条件通过，激活动态高亮 */
-      &.submit-btn-active {
-        background-color: #07c160; // 微信志愿绿
-        box-shadow: 0 8rpx 24rpx rgba(7, 193, 96, 0.25);
-      }
+    /* 表单条件通过，激活动态高亮 */
+    &.submit-btn-active {
+      background-color: #07c160; // 微信志愿绿
+      box-shadow: 0 8rpx 24rpx rgba(7, 193, 96, 0.25);
     }
   }
 }

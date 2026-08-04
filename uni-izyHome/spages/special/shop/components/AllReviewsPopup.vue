@@ -15,11 +15,7 @@
         </view>
       </view>
 
-      <scroll-view
-        class="review-scroll"
-        scroll-y
-        @scrolltolower="loadMore"
-      >
+      <scroll-view class="review-scroll" scroll-y @scrolltolower="loadMore">
         <view v-if="list.length === 0 && !loading" class="empty-state">
           <text class="empty-text">暂无评价</text>
         </view>
@@ -55,20 +51,22 @@
           <u-loading-icon></u-loading-icon>
           <text>加载中...</text>
         </view>
-        <view v-if="noMore && list.length > 0" class="no-more-tip">已加载全部</view>
+        <view v-if="noMore && list.length > 0" class="no-more-tip"
+          >已加载全部</view
+        >
       </scroll-view>
     </view>
   </u-popup>
 </template>
 
 <script>
-import { reviewList } from '@/spages/api/special.js';
+import { reviewList } from "@/spages/api/special.js";
 
 export default {
-  name: 'AllReviewsPopup',
+  name: "AllReviewsPopup",
   props: {
     show: { type: Boolean, default: false },
-    shopId: { type: [Number, String], default: '' },
+    shopId: { type: [Number, String], default: "" },
     totalCount: { type: Number, default: 0 },
   },
   watch: {
@@ -102,14 +100,14 @@ export default {
           pageNumber: this.pageNumber,
           pageSize: this.pageSize,
         });
-        if (res.code === '00000' && res.data) {
+        if (res.code === "00000" && res.data) {
           const { content = [], last } = res.data;
           this.list = append ? this.list.concat(content) : content;
           this.noMore = last !== false;
           if (!last) this.pageNumber++;
         }
       } catch (e) {
-        uni.showToast({ title: '加载失败', icon: 'none' });
+        uni.showToast({ title: "加载失败", icon: "none" });
       } finally {
         this.loading = false;
       }
@@ -128,19 +126,21 @@ export default {
     // 星级文字
     starsText(rating) {
       const n = rating || 5;
-      return '⭐️'.repeat(Math.min(n, 5));
+      return "⭐️".repeat(Math.min(n, 5));
     },
 
     formatTime(str) {
-      if (!str) return '';
-      const d = new Date(str.replace(/-/g, '/'));
+      if (!str) return "";
+      const d = new Date(str.replace(/-/g, "/"));
       if (isNaN(d.getTime())) return str;
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
+        d.getHours()
+      )}:${pad(d.getMinutes())}`;
     },
 
     handleClose() {
-      this.$emit('update:show', false);
+      this.$emit("update:show", false);
     },
   },
 };
@@ -215,7 +215,7 @@ export default {
         display: flex;
         flex-direction: column;
         flex: 1;
-
+        margin-left: 10rpx;
         .r-username {
           font-size: 24rpx;
           font-weight: bold;
