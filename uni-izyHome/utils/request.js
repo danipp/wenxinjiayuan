@@ -81,9 +81,9 @@ export default async (options) => { //传入的options是一个json对象
           // uni.removeStorageSync('_key')
           // uni.removeStorageSync('_profile')
           // uni.removeStorageSync('_openid')
-          uni.reLaunch({
-            url: '/pages/login/login'
-          })
+          // uni.reLaunch({
+          //   url: '/pages/login/login'
+          // })
           return
         } else if (res.data.code != '00000') {
           uni.showToast({
