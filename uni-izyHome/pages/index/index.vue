@@ -311,6 +311,12 @@ export default {
       this.currentCommunity = cachedLocation;
     }
   },
+  onShareAppMessage() {
+    return {
+      title: "温馨家园",
+      path: "/pages/index/index",
+    };
+  },
   methods: {
     getActive() {
       active({ communityId: this.currentCommunity.communityId || null }).then(

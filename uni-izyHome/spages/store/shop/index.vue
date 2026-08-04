@@ -32,8 +32,8 @@
         </view>
         <view class="divider"></view>
         <view class="stat-item">
-          <text class="num">580</text>
-          <text class="label">{{ shopInfo.monthlySales }}</text>
+          <text class="num">{{ shopInfo.monthlySales }}</text>
+          <text class="label">月销量</text>
         </view>
       </view>
     </view>

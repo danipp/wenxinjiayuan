@@ -138,7 +138,7 @@
     </view>
 
     <!-- 6. 底部固定栏 -->
-    <view class="footer-bar" v-if="user_phone_number">
+    <view class="footer-bar">
       <view class="footer-icon-btn" @click="goToShop">
         <u-icon name="home" color="#64748b" size="20"></u-icon>
         <text class="icon-label">店铺</text>
@@ -178,6 +178,7 @@
         立即购买 ¥{{ goods.cashPrice || goods.price }}
       </button>
     </view>
+    <PhoneAuthPopup :show.sync="showPhoneAuth" />
   </view>
 </template>
 
@@ -185,11 +186,14 @@
 import { detail2 } from "@/spages/api/goods";
 import { create } from "@/spages/api/order";
 import { collect, isCollected } from "@/spages/api/goods";
-
+import PhoneAuthPopup from "@/components/PhoneAuthPopup.vue";
 export default {
+  components: {
+    PhoneAuthPopup,
+  },
   data() {
     return {
-      user_phone_number: uni.getStorageSync("user_phone_number") || null,
+      showPhoneAuth: false,
       goodsId: null,
       userPoints: 850,
       isFavorited: false,
@@ -216,6 +220,12 @@ export default {
       this.fetchDetail();
       this.checkCollected();
     }
+  },
+  onShareAppMessage() {
+    return {
+      title: this.goods.title,
+      path: "/spages/store/detail?id=" + this.goodsId,
+    };
   },
   methods: {
     async fetchDetail() {
@@ -264,6 +274,11 @@ export default {
       }
     },
     goToShop() {
+      const user_phone_number = uni.getStorageSync("user_phone_number") || null;
+      if (!user_phone_number) {
+        this.showPhoneAuth = true;
+        return;
+      }
       if (this.goods.shopId) {
         uni.navigateTo({
           url: `/spages/store/shop/index?shopId=${this.goods.shopId}`,
@@ -271,6 +286,11 @@ export default {
       }
     },
     async toggleFavorite() {
+      const user_phone_number = uni.getStorageSync("user_phone_number") || null;
+      if (!user_phone_number) {
+        this.showPhoneAuth = true;
+        return;
+      }
       try {
         await collect({ targetId: this.goodsId, targetType: 1 });
         this.isFavorited = !this.isFavorited;
@@ -289,6 +309,11 @@ export default {
     },
     // 积分兑换 (payType=1)
     async handleRedeem() {
+      const user_phone_number = uni.getStorageSync("user_phone_number") || null;
+      if (!user_phone_number) {
+        this.showPhoneAuth = true;
+        return;
+      }
       if (this.userPoints < this.goods.pointsPrice) {
         uni.showToast({ title: "积分余额不足！", icon: "none" });
         return;
@@ -355,6 +380,11 @@ export default {
     },
     // 现金购买 (payType=2)
     async handlePurchase() {
+      const user_phone_number = uni.getStorageSync("user_phone_number") || null;
+      if (!user_phone_number) {
+        this.showPhoneAuth = true;
+        return;
+      }
       const price = this.goods.cashPrice || this.goods.price;
       uni.showModal({
         title: "确认购买",
