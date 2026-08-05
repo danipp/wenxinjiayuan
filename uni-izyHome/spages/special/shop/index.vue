@@ -155,17 +155,20 @@
       :shopId="shopId"
       :totalCount="reviewCount"
     />
+    <PhoneAuthPopup :show.sync="showPhoneAuth" />
   </view>
 </template>
 
 <script>
-import AllReviewsPopup from './components/AllReviewsPopup.vue';
+import AllReviewsPopup from "./components/AllReviewsPopup.vue";
 import { shopDetail, claimCoupon } from "@/spages/api/special.js";
+import PhoneAuthPopup from "@/components/PhoneAuthPopup.vue";
 
 export default {
-  components: { AllReviewsPopup },
+  components: { AllReviewsPopup, PhoneAuthPopup },
   data() {
     return {
+      showPhoneAuth: false,
       shopId: null,
       loading: false,
       shopInfo: {},
@@ -225,6 +228,11 @@ export default {
 
     // 领取优惠券
     async handleClaimCoupon(c, idx) {
+      let user_phone_number = uni.getStorageSync("user_phone_number") || null;
+      if (!user_phone_number) {
+        this.showPhoneAuth = true;
+        return;
+      }
       if (c.claimed) return;
       try {
         const res = await claimCoupon(c.couponId);
@@ -285,6 +293,11 @@ export default {
 
     // 写评价
     goWriteReview() {
+      let user_phone_number = uni.getStorageSync("user_phone_number") || null;
+      if (!user_phone_number) {
+        this.showPhoneAuth = true;
+        return;
+      }
       const name = encodeURIComponent(this.shopInfo.name || "");
       uni.navigateTo({
         url: `/spages/special/shop/comments?id=${this.shopId}&name=${name}`,
