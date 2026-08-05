@@ -6,13 +6,13 @@ import store from '../store'
 switch (envVersion) {
   case "develop": // 开发版
     API_URL = "http://192.168.0.143:8091/warm-home";
-    // API_URL = "https://hz.gaojiaomedia.cn/gong-cheng"; 
+    // API_URL = "https://warmhome.shengshitongda.cn/warm-home"; 
     break;
   case "trial": // 体验版
-    API_URL = "https://hz.gaojiaomedia.cn/gong-cheng";
+    API_URL = "https://warmhome.shengshitongda.cn/warm-home";
     break;
   case "release": // 正式版
-    API_URL = "https://hz.gaojiaomedia.cn/gong-cheng"; //正式环境 
+    API_URL = "https://warmhome.shengshitongda.cn/warm-home"; //正式环境 
     break;
 }
 function isNextWork() {
