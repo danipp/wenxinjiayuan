@@ -1,0 +1,40 @@
+package com.demo.weixin.enums.assistance;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+
+/**
+ * 帮扶申请状态枚举
+ */
+@Getter
+@Schema(description = "帮扶申请状态枚举")
+public enum AssistanceStatusEnum {
+
+    PENDING("pending", "待审核"),     // 用户已提交，等待审核
+    APPROVED("approved", "已通过"),   // 审核通过
+    REJECTED("rejected", "已拒绝"),   // 审核未通过
+    COMPLETED("completed", "已完成"); // 帮扶已完成
+
+    private final String code;
+    private final String desc;
+
+    AssistanceStatusEnum(String code, String desc) {
+        this.code = code;
+        this.desc = desc;
+    }
+
+    /**
+     * 根据状态码获取枚举
+     */
+    public static AssistanceStatusEnum getByCode(String code) {
+        if (code == null) {
+            return null;
+        }
+        for (AssistanceStatusEnum status : values()) {
+            if (status.code.equals(code)) {
+                return status;
+            }
+        }
+        return null;
+    }
+}
