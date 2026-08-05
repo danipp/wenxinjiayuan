@@ -1,6 +1,5 @@
 // import proxy from '@/utils/proxy.js'
 let API_URL;
-import Vue from 'vue'
 let envVersion = uni.getAccountInfoSync ? uni.getAccountInfoSync().miniProgram.envVersion : 'develop';
 import { getToken, removeToken } from './auth'
 import store from '../store'
