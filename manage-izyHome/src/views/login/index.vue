@@ -8,7 +8,7 @@
       <div class="login-form">
         <div class="login-logo">
           <img class="login-icon" src="@/assets/images/logo.svg" alt="" />
-          <h2 class="logo-text">校园 - 系统</h2>
+          <h2 class="logo-text">温馨家园管理系统</h2>
         </div>
         <LoginForm />
       </div>
