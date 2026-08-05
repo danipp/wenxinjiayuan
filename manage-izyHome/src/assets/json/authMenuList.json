@@ -6,7 +6,7 @@
       "name": "homeIndex",
       "component": "/home/index",
       "meta": {
-        "icon": "Home",
+        "icon": "HomeFilled",
         "title": "志愿者管理",
         "isLink": "",
         "isHide": false,
@@ -20,7 +20,7 @@
       "name": "AuditIndex",
       "component": "/audit/index",
       "meta": {
-        "icon": "Audit",
+        "icon": "Grid",
         "title": "操作审计",
         "isLink": "",
         "isHide": false,
