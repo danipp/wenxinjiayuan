@@ -146,7 +146,7 @@ export default {
     async fetchCategories() {
       try {
         const res = await getCategoryTree({
-          communityId: this.communityId || undefined,
+          communityId: this.communityId || "",
         });
         if (res.code === "00000" && Array.isArray(res.data)) {
           this.treeData = res.data.sort(
