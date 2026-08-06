@@ -18,17 +18,16 @@
           :key="index"
           class="swiper-item"
         >
-          <!-- <image class="avatar" :src="item.avatar" mode="aspectFill"></image> -->
           <text class="nickname">{{ item.title }}:</text>
-          <!-- <text class="action">完成</text> -->
           <text class="task text-ellipsis">[{{ item.content }}]</text>
           <text class="time">{{ item.startTime }}</text>
         </swiper-item>
       </swiper>
     </view>
-    <view style="margin-bottom: 20rpx">
+    <!-- Banner -->
+    <view class="banner-box">
       <image
-        style="width: 100%; border-radius: 20rpx"
+        class="banner-img"
         src="https://izyedu.oss-cn-guangzhou.aliyuncs.com/wxjy/p21.png"
         mode="widthFix"
       />
@@ -49,7 +48,7 @@
       </view>
     </view>
 
-    <!-- 4. Tab 切换 -->
+    <!-- 4. Tab 切换（原生页面滚动下正常吸顶 :style="{ paddingTop: stickyOffset + 'px' }"） -->
     <view class="section-title-bar">
       <view class="tabs-box">
         <text
@@ -67,17 +66,8 @@
       </view>
     </view>
 
-    <!-- 5. 社区活动 tab: scroll-view 瀑布流 -->
-    <scroll-view
-      v-show="currentTab === 'community'"
-      scroll-y
-      class="community-scroll"
-      refresher-enabled
-      :refresher-triggered="communityRefreshing"
-      @refresherrefresh="onCommunityRefresh"
-      @scrolltolower="onCommunityLoadMore"
-    >
-      <!-- 有数据 -->
+    <!-- 5. 社区活动内容 -->
+    <view v-show="currentTab === 'community'">
       <view v-if="communityList.length > 0" class="content-flow-layout">
         <view class="flow-column">
           <view
@@ -114,26 +104,10 @@
             >
             <view class="daren-item">
               <text class="badge-tag tag-orange">@互助达人 :</text>
-              <!-- <view class="user-info">
-                <image
-                  class="daren-avatar"
-                  src="https://cdn.uviewui.com/uview/album/1.jpg"
-                  mode="aspectFill"
-                ></image>
-                <text class="daren-name">秉治</text>
-              </view> -->
               <view class="desc">"谁会是互助小雷锋呢"</view>
             </view>
             <view class="daren-item">
               <text class="badge-tag tag-blue">@活动达人 :</text>
-              <!-- <view class="user-info">
-                <image
-                  class="daren-avatar"
-                  src="https://cdn.uviewui.com/uview/album/2.jpg"
-                  mode="aspectFill"
-                ></image>
-                <text class="daren-name">秉治</text>
-              </view> -->
               <view class="desc">"活动社交达人"</view>
             </view>
           </view>
@@ -165,30 +139,19 @@
         </view>
       </view>
 
-      <!-- 空数据 -->
       <view v-else-if="!communityLoading" class="empty-state">
         <view class="empty-icon">📋</view>
         <text class="empty-title">暂无社区活动</text>
         <text class="empty-sub">下拉刷新试试看</text>
       </view>
-      <!-- 加载状态 -->
       <view class="load-more-tips">
         <text v-if="communityLoading">加载中...</text>
         <text v-else-if="communityNoMore">—— 没有更多了 ——</text>
       </view>
-    </scroll-view>
+    </view>
 
-    <!-- 6. 招募活动 tab: scroll-view 列表 -->
-    <scroll-view
-      v-show="currentTab === 'recruitment'"
-      scroll-y
-      class="recruitment-scroll"
-      refresher-enabled
-      :refresher-triggered="recruitRefreshing"
-      @refresherrefresh="onRecruitRefresh"
-      @scrolltolower="onRecruitLoadMore"
-    >
-      <!-- 有数据 -->
+    <!-- 6. 招募活动内容 -->
+    <view v-show="currentTab === 'recruitment'">
       <view v-if="recruitList.length > 0" class="recruitment-list">
         <view
           v-for="item in recruitList"
@@ -227,13 +190,12 @@
         </view>
       </view>
 
-      <!-- 空数据 -->
       <view v-else-if="!recruitLoading" class="empty-state">
         <view class="empty-icon">📋</view>
         <text class="empty-title">暂无招募活动</text>
         <text class="empty-sub">下拉刷新试试看</text>
       </view>
-    </scroll-view>
+    </view>
 
     <!-- 社区选择弹窗 -->
     <CommunitySelector
@@ -272,25 +234,27 @@ export default {
       showCommunitySelector: false,
       showNfcCheckinSuccess: false,
       nfcCheckinParams: {},
+      statusBarHeight: 0,
       // 社区活动
       communityList: [],
       communityPage: 1,
       communityPageSize: 10,
       communityLoading: false,
       communityNoMore: false,
-      communityRefreshing: false,
       // 招募活动
       recruitList: [],
       recruitPage: 1,
       recruitPageSize: 10,
       recruitLoading: false,
       recruitNoMore: false,
-      recruitRefreshing: false,
       // 轮播
       noticeList: [],
     };
   },
   computed: {
+    stickyOffset() {
+      return this.statusBarHeight + 5;
+    },
     leftActivities() {
       return this.communityList.filter((_, i) => i % 2 === 0);
     },
@@ -299,6 +263,7 @@ export default {
     },
   },
   onLoad(options) {
+    this.statusBarHeight = uni.getSystemInfoSync().statusBarHeight;
     loginApi().then((res) => {
       if (this.hasNfcCheckinParams(options)) {
         this.nfcCheckinParams = this.formatNfcCheckinParams(options);
@@ -322,6 +287,36 @@ export default {
       path: "/pages/index/index",
     };
   },
+  onReachBottom() {
+    console.log("reachbottom");
+
+    if (this.currentTab === "community") {
+      if (!this.communityLoading && !this.communityNoMore) {
+        this.fetchCommunityList();
+      }
+    } else {
+      if (!this.recruitLoading && !this.recruitNoMore) {
+        this.fetchRecruitList();
+      }
+    }
+  },
+  onPullDownRefresh() {
+    if (this.currentTab === "community") {
+      this.communityPage = 1;
+      this.communityNoMore = false;
+      this.communityList = [];
+      this.fetchCommunityList().finally(() => {
+        uni.stopPullDownRefresh();
+      });
+    } else {
+      this.recruitPage = 1;
+      this.recruitNoMore = false;
+      this.recruitList = [];
+      this.fetchRecruitList().finally(() => {
+        uni.stopPullDownRefresh();
+      });
+    }
+  },
   methods: {
     getActive() {
       active({ communityId: this.currentCommunity.communityId || "" }).then(
@@ -330,6 +325,7 @@ export default {
         }
       );
     },
+
     // ==================== 社区活动 ====================
     async fetchCommunityList() {
       if (this.communityLoading || this.communityNoMore) return;
@@ -373,19 +369,6 @@ export default {
         uni.showToast({ title: "加载失败", icon: "none" });
       } finally {
         this.communityLoading = false;
-        this.communityRefreshing = false;
-      }
-    },
-    onCommunityRefresh() {
-      this.communityRefreshing = true;
-      this.communityPage = 1;
-      this.communityNoMore = false;
-      this.communityList = [];
-      this.fetchCommunityList();
-    },
-    onCommunityLoadMore() {
-      if (!this.communityLoading && !this.communityNoMore) {
-        this.fetchCommunityList();
       }
     },
 
@@ -427,19 +410,6 @@ export default {
         uni.showToast({ title: "加载失败", icon: "none" });
       } finally {
         this.recruitLoading = false;
-        this.recruitRefreshing = false;
-      }
-    },
-    onRecruitRefresh() {
-      this.recruitRefreshing = true;
-      this.recruitPage = 1;
-      this.recruitNoMore = false;
-      this.recruitList = [];
-      this.fetchRecruitList();
-    },
-    onRecruitLoadMore() {
-      if (!this.recruitLoading && !this.recruitNoMore) {
-        this.fetchRecruitList();
       }
     },
 
@@ -614,6 +584,14 @@ export default {
     }
   }
 
+  .banner-box {
+    margin-bottom: 20rpx;
+    .banner-img {
+      width: 100%;
+      border-radius: 20rpx;
+    }
+  }
+
   .action-grid {
     display: flex;
     gap: 24rpx;
@@ -656,7 +634,8 @@ export default {
   }
 
   .section-title-bar {
-    margin-bottom: 24rpx;
+    padding: 16rpx 0;
+    background-color: #f7f9fb;
     .tabs-box {
       display: flex;
       align-items: center;
@@ -688,16 +667,11 @@ export default {
     }
   }
 
-  /* scroll-view 占满剩余高度 */
-  .community-scroll,
-  .recruitment-scroll {
-    height: calc(100vh - 520rpx);
-  }
-
   /* 社区活动瀑布流 */
   .content-flow-layout {
     display: flex;
     gap: 24rpx;
+    padding-top: 24rpx;
     .flow-column {
       flex: 1;
       display: flex;
@@ -811,6 +785,7 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 24rpx;
+    padding-top: 24rpx;
     .recruitment-item {
       display: flex;
       background-color: #fff;
