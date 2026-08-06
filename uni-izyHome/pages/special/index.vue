@@ -4,53 +4,37 @@
     <view class="custom-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="search-input-box">
         <u-icon name="search" color="#b2b2b2" size="32rpx"></u-icon>
-        <input
-          type="text"
-          v-model="searchKeyword"
-          placeholder="搜索店铺"
-          class="search-input"
-          @confirm="onSearch"
-        />
+        <input type="text" v-model="searchKeyword" placeholder="搜索店铺" class="search-input" @confirm="onSearch" />
       </view>
     </view>
-
     <!-- 2. 内容区 -->
-    <view
-      class="main-content-body"
-      :style="{ paddingTop: statusBarHeight + 44 + 'px' }"
-    >
+    <view class="main-content-body" :style="{ paddingTop: statusBarHeight + 44 + 'px' }">
+      <view class="top-header-bar" style="margin-bottom:0">
+        <view class="community-pill" @click="showCommunitySelector = true;">
+          <u-icon name="home-fill" color="#07c160" size="16"></u-icon>
+          <text class="pill-text text-ellipsis">{{ currentCommunity.name }}</text>
+          <u-icon name="arrow-right" color="#999" size="10"></u-icon>
+        </view>
+      </view>
       <!-- 一级分类导航（全屏等宽） -->
-      <SpecialCategoryNav
-        :categories="level1Categories"
-        :activeIdx="active1Idx"
-        @select="handleLevel1Select"
-      />
+      <SpecialCategoryNav :categories="level1Categories" :activeIdx="active1Idx" @select="handleLevel1Select" />
 
       <!-- 左右分栏 -->
       <view class="split-view-wrapper">
         <!-- 左侧二级侧边栏 -->
-        <SpecialSidebar
-          :subCategories="currentSubCategories"
-          :activeIdx="active2Idx"
-          :headerHeight="navAndHeaderTotalHeightPx"
-          @select="handleLevel2Select"
-        />
+        <SpecialSidebar :subCategories="currentSubCategories" :activeIdx="active2Idx"
+          :headerHeight="navAndHeaderTotalHeightPx" @select="handleLevel2Select" />
 
         <!-- 右侧店铺列表（含筛选 Bar + 分页列表） -->
         <view style="flex: 1">
-          <SpecialShopList
-            ref="shopList"
-            :shopList="shopItems"
-            :loading="shopLoading"
-            :noMore="shopNoMore"
-            :headerHeight="navAndHeaderTotalHeightPx"
-            @go-detail="goToShopDetail"
-            @filter-change="handleFilterChange"
-            @load-more="loadMoreShops"
-          />
+          <SpecialShopList ref="shopList" :shopList="shopItems" :loading="shopLoading" :noMore="shopNoMore"
+            :headerHeight="navAndHeaderTotalHeightPx" @go-detail="goToShopDetail" @filter-change="handleFilterChange"
+            @load-more="loadMoreShops" />
         </view>
       </view>
     </view>
+    <CommunitySelector :show.sync="showCommunitySelector" title="请选择我的社区" mode="select"
+      @confirm="handleCommunityChange" />
   </view>
 </template>
 
@@ -59,15 +43,21 @@ import SpecialCategoryNav from "./components/SpecialCategoryNav.vue";
 import SpecialSidebar from "./components/SpecialSidebar.vue";
 import SpecialShopList from "./components/SpecialShopList.vue";
 import { getCategoryTree, shopList } from "@/api/special.js";
-
+import CommunitySelector from "@/components/community.vue";
 export default {
   components: {
     SpecialCategoryNav,
     SpecialSidebar,
     SpecialShopList,
+    CommunitySelector
   },
   data() {
     return {
+      showCommunitySelector: false,
+      currentCommunity: {
+        name: "请选择社区",
+        communityId: ""
+      },
       statusBarHeight: 44,
       searchKeyword: "",
 
@@ -87,8 +77,6 @@ export default {
       currentSort: "",
       currentHighRating: false,
       currentIsNew: false,
-
-      communityId: "",
     };
   },
   computed: {
@@ -134,19 +122,31 @@ export default {
     this.statusBarHeight = sys.statusBarHeight || 44;
     uni.setNavigationBarTitle({ title: "社区特惠" });
 
+
+
+  },
+  onShow() {
     const community = uni.getStorageSync("selected_community");
     if (community && community.communityId) {
-      this.communityId = community.communityId;
+      this.currentCommunity.communityId = community.communityId;
+      this.currentCommunity.name = community.name;
     }
-
     this.fetchCategories();
   },
   methods: {
+    handleCommunityChange(data) {
+      if (data && data.community) {
+        this.currentCommunity.name = data.community.name;
+        this.currentCommunity.communityId = data.community.communityId;
+        uni.setStorageSync("selected_community", data.community);
+        this.fetchCategories();
+      }
+    },
     // -------- 分类 --------
     async fetchCategories() {
       try {
         const res = await getCategoryTree({
-          communityId: this.communityId || "",
+          communityId: this.currentCommunity.communityId || "",
         });
         if (res.code === "00000" && Array.isArray(res.data)) {
           this.treeData = res.data.sort(
@@ -174,7 +174,7 @@ export default {
         const payload = {
           pageNumber: this.shopPage,
           pageSize: this.shopPageSize,
-          communityId: this.communityId || undefined,
+          communityId: this.currentCommunity.communityId || undefined,
         };
         if (this.activeCat1Id) payload.cat1Id = this.activeCat1Id;
         if (this.activeCat2Id) payload.cat2Id = this.activeCat2Id;
@@ -308,6 +308,40 @@ export default {
     flex: 1;
     display: flex;
     overflow: hidden;
+  }
+}
+
+/* 顶部社区栏 (90rpx) */
+.top-header-bar {
+  height: 90rpx;
+  padding: 0 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  border-bottom: 1rpx solid #edf2f7;
+
+  .community-pill {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f1f3f5;
+    padding: 10rpx 20rpx;
+    border-radius: 30rpx;
+    max-width: 60%;
+
+    .pill-text {
+      font-size: 26rpx;
+      font-weight: bold;
+      color: #2c405a;
+      margin: 0 10rpx;
+    }
+  }
+
+  .store-header-tips {
+    font-size: 24rpx;
+    font-weight: bold;
+    color: #94a3b8;
   }
 }
 </style>

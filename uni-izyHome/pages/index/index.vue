@@ -13,11 +13,7 @@
     <view class="notice-swiper-bar" v-if="noticeList.length">
       <u-icon name="volume-fill" color="#07c160" size="18"></u-icon>
       <swiper class="notice-swiper" vertical autoplay circular interval="3000">
-        <swiper-item
-          v-for="(item, index) in noticeList"
-          :key="index"
-          class="swiper-item"
-        >
+        <swiper-item v-for="(item, index) in noticeList" :key="index" class="swiper-item">
           <text class="nickname">{{ item.title }}:</text>
           <text class="task text-ellipsis">[{{ item.content }}]</text>
           <text class="time">{{ item.startTime }}</text>
@@ -26,11 +22,7 @@
     </view>
     <!-- Banner -->
     <view class="banner-box">
-      <image
-        class="banner-img"
-        src="https://izyedu.oss-cn-guangzhou.aliyuncs.com/wxjy/p21.png"
-        mode="widthFix"
-      />
+      <image class="banner-img" src="https://izyedu.oss-cn-guangzhou.aliyuncs.com/wxjy/p21.png" mode="widthFix" />
     </view>
     <!-- 3. 双核核心入口 -->
     <view class="action-grid">
@@ -51,18 +43,10 @@
     <!-- 4. Tab 切换（原生页面滚动下正常吸顶 :style="{ paddingTop: stickyOffset + 'px' }"） -->
     <view class="section-title-bar">
       <view class="tabs-box">
-        <text
-          class="tab-item"
-          :class="{ active: currentTab === 'recruitment' }"
-          @click="switchTab('recruitment')"
-          >招募活动</text
-        >
-        <text
-          class="tab-item"
-          :class="{ active: currentTab === 'community' }"
-          @click="switchTab('community')"
-          >社区活动</text
-        >
+        <text class="tab-item" :class="{ active: currentTab === 'recruitment' }"
+          @click="switchTab('recruitment')">招募活动</text>
+        <text class="tab-item" :class="{ active: currentTab === 'community' }"
+          @click="switchTab('community')">社区活动</text>
       </view>
     </view>
 
@@ -70,28 +54,17 @@
     <view v-show="currentTab === 'community'">
       <view v-if="communityList.length > 0" class="content-flow-layout">
         <view class="flow-column">
-          <view
-            v-for="item in leftActivities"
-            :key="item.id"
-            class="activity-card"
-            @click="goDetail(item.id)"
-          >
-            <image
-              class="cover-image"
-              :src="item.coverImage"
-              mode="aspectFill"
-            ></image>
+          <view v-for="item in leftActivities" :key="item.id" class="activity-card" @click="goDetail(item.id)">
+            <image class="cover-image" :src="item.coverImage" mode="aspectFill"></image>
             <view class="card-info">
               <text class="activity-title">{{ item.title }}</text>
               <view class="location-badge">
                 <u-icon name="map-fill" color="#999" size="12"></u-icon>
                 <text class="location-text text-ellipsis">{{
                   item.location || "待定"
-                }}</text>
+                  }}</text>
               </view>
-              <text class="participant-info"
-                >{{ item.participantCount || 0 }}人参与</text
-              >
+              <text class="participant-info">{{ item.participantCount || 0 }}人参与</text>
             </view>
           </view>
         </view>
@@ -99,9 +72,7 @@
         <view class="flow-column">
           <!-- 达人榜 -->
           <view class="daren-honor-card" @click="navigateTo('daren')">
-            <view class="card-header"
-              ><text class="header-text">🏆 志愿者达人榜</text></view
-            >
+            <view class="card-header"><text class="header-text">🏆 志愿者达人榜</text></view>
             <view class="daren-item">
               <text class="badge-tag tag-orange">@互助达人 :</text>
               <view class="desc">"谁会是互助小雷锋呢"</view>
@@ -112,28 +83,17 @@
             </view>
           </view>
 
-          <view
-            v-for="item in rightActivities"
-            :key="item.id"
-            class="activity-card"
-            @click="goDetail(item.id)"
-          >
-            <image
-              class="cover-image"
-              :src="item.coverImage"
-              mode="aspectFill"
-            ></image>
+          <view v-for="item in rightActivities" :key="item.id" class="activity-card" @click="goDetail(item.id)">
+            <image class="cover-image" :src="item.coverImage" mode="aspectFill"></image>
             <view class="card-info">
               <text class="activity-title">{{ item.title }}</text>
               <view class="location-badge">
                 <u-icon name="map-fill" color="#999" size="12"></u-icon>
                 <text class="location-text text-ellipsis">{{
                   item.location || "待定"
-                }}</text>
+                  }}</text>
               </view>
-              <text class="participant-info"
-                >{{ item.participantCount || 0 }}人参与</text
-              >
+              <text class="participant-info">{{ item.participantCount || 0 }}人参与</text>
             </view>
           </view>
         </view>
@@ -153,34 +113,20 @@
     <!-- 6. 招募活动内容 -->
     <view v-show="currentTab === 'recruitment'">
       <view v-if="recruitList.length > 0" class="recruitment-list">
-        <view
-          v-for="item in recruitList"
-          :key="item.id"
-          class="recruitment-item"
-          @click="goDetail(item.id)"
-        >
+        <view v-for="item in recruitList" :key="item.id" class="recruitment-item" @click="goDetail(item.id)">
           <image class="cover" :src="item.coverImage" mode="aspectFill"></image>
           <view class="info">
             <view class="title">{{ item.title }}</view>
             <view class="desc">
-              <text class="organizer"
-                >发起方: {{ item.authorName || "社区" }}</text
-              >
-              <text
-                class="status"
-                :class="
-                  item.status === 1
-                    ? 'status-upcoming'
-                    : item.status === 2
-                    ? 'status-ongoing'
-                    : 'status-ended'
-                "
-                >{{ item.statusText || "招募中" }}</text
-              >
+              <text class="organizer">发起方: {{ item.authorName || "社区" }}</text>
+              <text class="status" :class="item.status === 1
+                ? 'status-upcoming'
+                : item.status === 2
+                  ? 'status-ongoing'
+                  : 'status-ended'
+                ">{{ item.statusText || "招募中" }}</text>
             </view>
-            <text class="join-count"
-              >{{ item.participantCount || 0 }}人已参与</text
-            >
+            <text class="join-count">{{ item.participantCount || 0 }}人已参与</text>
           </view>
         </view>
 
@@ -198,19 +144,11 @@
     </view>
 
     <!-- 社区选择弹窗 -->
-    <CommunitySelector
-      :show.sync="showCommunitySelector"
-      title="请选择我的社区"
-      mode="select"
-      @confirm="handleCommunityChange"
-    />
+    <CommunitySelector :show.sync="showCommunitySelector" title="请选择我的社区" mode="select"
+      @confirm="handleCommunityChange" />
 
-    <NfcCheckinSuccess
-      :show="showNfcCheckinSuccess"
-      :checkinParams="nfcCheckinParams"
-      @submit-success="handleNfcSubmitSuccess"
-      @close="showNfcCheckinSuccess = false"
-    />
+    <NfcCheckinSuccess :show="showNfcCheckinSuccess" :checkinParams="nfcCheckinParams"
+      @submit-success="handleNfcSubmitSuccess" @close="showNfcCheckinSuccess = false" />
     <PhoneAuthPopup :show.sync="showPhoneAuth" />
   </view>
 </template>
@@ -451,9 +389,18 @@ export default {
       if (data && data.community) {
         this.currentCommunityName = data.community.name;
         this.currentCommunity = data.community;
-        uni.showToast({
-          title: `已切换至 ${data.community.name}`,
-          icon: "none",
+        this.$nextTick(() => {
+          this.recruitPage = 1;
+          this.recruitNoMore = false;
+          this.recruitList = [];
+          this.fetchRecruitList();
+
+          this.communityPage = 1;
+          this.communityNoMore = false;
+          this.communityList = [];
+          this.fetchCommunityList();
+
+          this.getActive();
         });
       }
     },
@@ -503,6 +450,7 @@ export default {
     flex-direction: column;
     margin-bottom: 32rpx;
     padding-top: 20rpx;
+
     .brand-title {
       font-size: 44rpx;
       font-weight: 800;
@@ -510,6 +458,7 @@ export default {
       letter-spacing: 1rpx;
       margin-bottom: 12rpx;
     }
+
     .community-selector {
       display: inline-flex;
       align-items: center;
@@ -519,11 +468,13 @@ export default {
       border-radius: 40rpx;
       width: fit-content;
       box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+
       .community-name {
         font-size: 28rpx;
         font-weight: 600;
         color: #2d3748;
       }
+
       .switch-btn {
         font-size: 22rpx;
         color: #4a5568;
@@ -544,15 +495,18 @@ export default {
     height: 80rpx;
     margin-bottom: 32rpx;
     box-sizing: border-box;
+
     .notice-swiper {
       flex: 1;
       height: 100%;
       margin-left: 16rpx;
+
       .swiper-item {
         display: flex;
         align-items: center;
         font-size: 26rpx;
         color: #2d3748;
+
         .avatar {
           width: 44rpx;
           height: 44rpx;
@@ -560,21 +514,25 @@ export default {
           margin-right: 16rpx;
           border: 2rpx solid #fff;
         }
+
         .nickname {
           font-weight: 600;
           color: #2d3748;
           margin-right: 8rpx;
         }
+
         .action {
           color: #718096;
           margin-right: 12rpx;
         }
+
         .task {
           flex: 1;
           color: #07c160;
           font-weight: 700;
           max-width: 280rpx;
         }
+
         .time {
           font-size: 24rpx;
           color: #a0aec0;
@@ -586,6 +544,7 @@ export default {
 
   .banner-box {
     margin-bottom: 20rpx;
+
     .banner-img {
       width: 100%;
       border-radius: 20rpx;
@@ -596,6 +555,7 @@ export default {
     display: flex;
     gap: 24rpx;
     margin-bottom: 48rpx;
+
     .action-card {
       flex: 1;
       height: 180rpx;
@@ -607,26 +567,32 @@ export default {
       align-items: center;
       box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.04);
       transition: transform 0.15s ease;
+
       &:active {
         transform: scale(0.98);
       }
+
       .card-text {
         display: flex;
         flex-direction: column;
+
         .main-title {
           font-size: 36rpx;
           font-weight: 800;
           color: #fff;
           margin-bottom: 8rpx;
         }
+
         .sub-title {
           font-size: 22rpx;
           color: rgba(255, 255, 255, 0.85);
         }
       }
+
       &.card-fun {
         background: linear-gradient(135deg, #ff9944 0%, #ff6f22 100%);
       }
+
       &.card-deeds {
         background: linear-gradient(135deg, #13d682 0%, #07b160 100%);
       }
@@ -636,10 +602,12 @@ export default {
   .section-title-bar {
     padding: 16rpx 0;
     background-color: #f7f9fb;
+
     .tabs-box {
       display: flex;
       align-items: center;
       gap: 32rpx;
+
       .tab-item {
         font-size: 32rpx;
         color: #718096;
@@ -647,10 +615,12 @@ export default {
         position: relative;
         padding-bottom: 8rpx;
         transition: all 0.2s;
+
         &.active {
           font-size: 36rpx;
           color: #1a202c;
           font-weight: 800;
+
           &::after {
             content: "";
             position: absolute;
@@ -672,6 +642,7 @@ export default {
     display: flex;
     gap: 24rpx;
     padding-top: 24rpx;
+
     .flow-column {
       flex: 1;
       display: flex;
@@ -685,19 +656,24 @@ export default {
       border-radius: 32rpx;
       padding: 32rpx 28rpx;
       box-shadow: 0 8rpx 24rpx rgba(251, 191, 36, 0.05);
+
       .card-header {
         margin-bottom: 28rpx;
+
         .header-text {
           font-size: 30rpx;
           font-weight: 800;
           color: #b75e12;
         }
       }
+
       .daren-item {
         margin-bottom: 24rpx;
+
         &:last-child {
           margin-bottom: 0;
         }
+
         .badge-tag {
           font-size: 22rpx;
           font-weight: 700;
@@ -705,31 +681,37 @@ export default {
           border-radius: 12rpx;
           display: inline-block;
           margin-bottom: 12rpx;
+
           &.tag-orange {
             background-color: #fff0db;
             color: #d97706;
           }
+
           &.tag-blue {
             background-color: #e0f2fe;
             color: #0284c7;
           }
         }
+
         .user-info {
           display: flex;
           align-items: center;
           margin-bottom: 8rpx;
+
           .daren-avatar {
             width: 40rpx;
             height: 40rpx;
             border-radius: 50%;
             margin-right: 12rpx;
           }
+
           .daren-name {
             font-size: 26rpx;
             font-weight: 700;
             color: #2d3748;
           }
         }
+
         .desc {
           font-size: 24rpx;
           color: #4a5568;
@@ -745,15 +727,18 @@ export default {
       box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.03);
       display: flex;
       flex-direction: column;
+
       .cover-image {
         width: 100%;
         height: 240rpx;
         background-color: #edf2f7;
       }
+
       .card-info {
         padding: 24rpx;
         display: flex;
         flex-direction: column;
+
         .activity-title {
           font-size: 28rpx;
           font-weight: 700;
@@ -761,10 +746,12 @@ export default {
           line-height: 1.4;
           margin-bottom: 16rpx;
         }
+
         .location-badge {
           display: flex;
           align-items: center;
           margin-bottom: 12rpx;
+
           .location-text {
             font-size: 22rpx;
             color: #718096;
@@ -772,6 +759,7 @@ export default {
             max-width: 240rpx;
           }
         }
+
         .participant-info {
           font-size: 22rpx;
           color: #94a3b8;
@@ -786,12 +774,14 @@ export default {
     flex-direction: column;
     gap: 24rpx;
     padding-top: 24rpx;
+
     .recruitment-item {
       display: flex;
       background-color: #fff;
       border-radius: 24rpx;
       padding: 24rpx;
       box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
+
       .cover {
         width: 160rpx;
         height: 160rpx;
@@ -799,41 +789,50 @@ export default {
         margin-right: 24rpx;
         background-color: #f7f9fb;
       }
+
       .info {
         flex: 1;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+
         .title {
           font-size: 30rpx;
           font-weight: 700;
           color: #1a202c;
         }
+
         .desc {
           display: flex;
           justify-content: space-between;
           align-items: center;
           font-size: 24rpx;
+
           .organizer {
             color: #718096;
           }
+
           .status {
             padding: 4rpx 12rpx;
             border-radius: 8rpx;
+
             &.status-upcoming {
               color: #0284c7;
               background-color: #e0f2fe;
             }
+
             &.status-ongoing {
               color: #07c160;
               background-color: #e6f9f0;
             }
+
             &.status-ended {
               color: #94a3b8;
               background-color: #f1f5f9;
             }
           }
         }
+
         .join-count {
           font-size: 22rpx;
           color: #94a3b8;
@@ -856,6 +855,7 @@ export default {
     align-items: center;
     justify-content: center;
     padding-top: 200rpx;
+
     .empty-icon {
       width: 128rpx;
       height: 128rpx;
@@ -867,11 +867,13 @@ export default {
       font-size: 60rpx;
       margin-bottom: 28rpx;
     }
+
     .empty-title {
       font-size: 28rpx;
       color: #718096;
       font-weight: bold;
     }
+
     .empty-sub {
       font-size: 22rpx;
       color: #cbd5e1;

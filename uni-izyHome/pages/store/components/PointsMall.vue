@@ -1,26 +1,15 @@
 <template>
   <view class="component-page-box">
     <!-- 严格使用 calc(100vh - 上方高度)，禁用 flex:1 -->
-    <scroll-view
-      scroll-y
-      class="scroll-view-panel"
-      :style="{ height: 'calc(100vh - ' + headerHeight + 'rpx)' }"
-      @scrolltolower="handleLoadMore"
-    >
+    <scroll-view scroll-y class="scroll-view-panel" :style="{ height: 'calc(100vh - ' + headerHeight + 'rpx)' }"
+      @scrolltolower="handleLoadMore">
       <view class="goods-grid" v-if="goodsList.length">
-        <view
-          v-for="item in goodsList"
-          :key="item.id"
-          class="goods-card"
-          @click="goDetail(item.id)"
-        >
+        <view v-for="item in goodsList" :key="item.id" class="goods-card" @click="goDetail(item.id)">
           <image class="goods-img" :src="item.image" mode="aspectFill"></image>
           <view class="goods-info">
             <text class="goods-title text-ellipsis-2">{{ item.title }}</text>
             <view class="price-row">
-              <text class="price-points"
-                >{{ item.pointsPrice }}<text class="unit">积分</text></text
-              >
+              <text class="price-points">{{ item.pointsPrice }}<text class="unit">积分</text></text>
               <text class="price-cash">+￥{{ item.cashPrice }}</text>
             </view>
             <text class="sales-text">已兑 {{ item.sales }} 件</text>
@@ -32,9 +21,7 @@
       </view>
       <view class="load-more-tips">
         <text v-if="loading">加载中...</text>
-        <text v-else-if="noMore && goodsList.length > 0" class="no-more"
-          >—— 已经是最后一页了 ——</text
-        >
+        <text v-else-if="noMore && goodsList.length > 0" class="no-more">—— 已经是最后一页了 ——</text>
       </view>
     </scroll-view>
   </view>
@@ -46,6 +33,10 @@ import { page1 } from "@/api/goods";
 export default {
   props: {
     headerHeight: { type: Number, default: 200 },
+    communityId: {
+      type: Number | String,
+      default: () => ""
+    }
   },
   data() {
     return {
@@ -60,6 +51,12 @@ export default {
     this.fetchGoods();
   },
   methods: {
+    refreshData() {
+      this.pageNum = 1;
+      this.noMore = false;
+      this.goodsList = [];
+      this.fetchGoods();
+    },
     async fetchGoods() {
       if (this.loading || this.noMore) return;
       this.loading = true;
@@ -70,6 +67,7 @@ export default {
           goodsType: 3,
           scene: "volunteer",
           status: 1,
+          communityId: this.communityId
         });
         const pageData = res.data || {};
         const list = pageData.content || [];

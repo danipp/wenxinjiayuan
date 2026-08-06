@@ -21,12 +21,7 @@
     </view> -->
 
     <!-- 物资列表 -->
-    <scroll-view
-      style="height: calc(100vh - 110rpx)"
-      scroll-y
-      class="goods-list-scroll"
-      @scrolltolower="loadMore"
-    >
+    <scroll-view style="height: calc(100vh - 200rpx)" scroll-y class="goods-list-scroll" @scrolltolower="loadMore">
       <!-- <view class="banner-box">
         <u-swiper
           :list="bannerList"
@@ -81,29 +76,16 @@
       </view> -->
 
       <view class="kingkong-box">
-        <view
-          class="kingkong-item"
-          v-for="(item, index) in kingkongList"
-          :key="index"
-          @click="handleKingkongClick(item.url)"
-        >
+        <view class="kingkong-item" v-for="(item, index) in kingkongList" :key="index"
+          @click="handleKingkongClick(item.url)">
           <text class="icon">{{ item.icon }}</text>
           <text class="text">{{ item.name }}</text>
         </view>
       </view>
       <view class="goods-list" v-if="goodsList.length">
-        <view
-          class="goods-card"
-          v-for="item in goodsList"
-          :key="item.id"
-          @click="goToDetail(item.id)"
-        >
+        <view class="goods-card" v-for="item in goodsList" :key="item.id" @click="goToDetail(item.id)">
           <view class="goods-img-wrap">
-            <image
-              class="goods-img"
-              :src="item.image"
-              mode="aspectFill"
-            ></image>
+            <image class="goods-img" :src="item.image" mode="aspectFill"></image>
             <view class="time-tag">{{ item.endTime }}结束</view>
           </view>
 
@@ -120,11 +102,7 @@
             </view>
 
             <view class="company-wrap u-line-1">
-              <image
-                class="company-logo"
-                :src="item.companyLogo"
-                mode="aspectFill"
-              ></image>
+              <image class="company-logo" :src="item.companyLogo" mode="aspectFill"></image>
               <text class="company-name">{{ item.companyName }}</text>
             </view>
 
@@ -133,12 +111,8 @@
                 <text>已申领 {{ item.applied }} / 总计 {{ item.total }}</text>
                 <text>{{ calculatePercent(item.applied, item.total) }}%</text>
               </view>
-              <u-line-progress
-                :percentage="calculatePercent(item.applied, item.total)"
-                activeColor="#FF5505"
-                height="10rpx"
-                :showText="false"
-              ></u-line-progress>
+              <u-line-progress :percentage="calculatePercent(item.applied, item.total)" activeColor="#FF5505"
+                height="10rpx" :showText="false"></u-line-progress>
             </view>
 
             <!-- <view class="btn-wrap">
@@ -169,9 +143,7 @@
 
         <view class="load-more-tips">
           <text v-if="loading">加载中...</text>
-          <text v-else-if="noMore && goodsList.length > 0"
-            >—— 已经是最后一页了 ——</text
-          >
+          <text v-else-if="noMore && goodsList.length > 0">—— 已经是最后一页了 ——</text>
         </view>
       </view>
       <view v-else>
@@ -185,6 +157,12 @@
 import { page1 } from "@/api/goods";
 
 export default {
+  props: {
+    communityId: {
+      type: Number | String,
+      default: () => ""
+    }
+  },
   data() {
     return {
       bannerList: [
@@ -237,6 +215,12 @@ export default {
     this.fetchGoods();
   },
   methods: {
+    refreshData() {
+      this.pageNum = 1;
+      this.noMore = false;
+      this.goodsList = [];
+      this.fetchGoods();
+    },
     async fetchGoods() {
       if (this.loading || this.noMore) return;
       this.loading = true;
@@ -247,6 +231,7 @@ export default {
           goodsType: 3,
           scene: "assistance",
           status: 1,
+          communityId: this.communityId
         });
         const pageData = res.data || {};
         const list = pageData.content || [];
@@ -378,12 +363,15 @@ export default {
   .bg-green {
     background: linear-gradient(135deg, #32d398, #16ba80);
   }
+
   .bg-blue {
     background: linear-gradient(135deg, #42b6ff, #1c90ff);
   }
+
   .bg-light-blue {
     background: linear-gradient(135deg, #3bb3ff, #258bf7);
   }
+
   .bg-teal {
     background: linear-gradient(135deg, #10cca0, #23b6bf);
   }

@@ -1,12 +1,6 @@
 <template>
-  <u-popup
-    :show="show"
-    mode="bottom"
-    round="16"
-    @close="handleClose"
-    :safeAreaInsetBottom="true"
-    @touchmove.stop.prevent
-  >
+  <u-popup :show="show" mode="bottom" round="16" @close="handleClose" :safeAreaInsetBottom="true"
+    @touchmove.stop.prevent>
     <div class="community-popup-container">
       <!-- 头部标题与关闭按钮 -->
       <div class="popup-header">
@@ -32,20 +26,11 @@
 
       <!-- 社区滚动选择器 -->
       <div class="picker-container">
-        <picker-view
-          v-if="communityList.length > 0"
-          :value="pickerValue"
-          @change="onPickerChange"
-          class="community-picker-view"
-          indicator-style="height: 50px;"
-        >
+        <picker-view v-if="communityList.length > 0" :value="pickerValue" @change="onPickerChange"
+          class="community-picker-view" indicator-style="height: 50px;">
           <picker-view-column>
-            <div
-              v-for="(item, index) in communityList"
-              :key="index"
-              class="picker-item"
-              :class="{ 'active-item': pickerValue[0] === index }"
-            >
+            <div v-for="(item, index) in communityList" :key="index" class="picker-item"
+              :class="{ 'active-item': pickerValue[0] === index }">
               {{ item.name }}
             </div>
           </picker-view-column>
@@ -113,11 +98,11 @@ export default {
     };
   },
   watch: {
-    show(val) {
-      if (val) {
-        this.initData();
-      }
-    },
+    // show(val) {
+    //   if (val) {
+    //     this.initData();
+    //   }
+    // },
     initialCommunities: {
       handler(newVal) {
         if (newVal && newVal.length > 0) {
@@ -126,6 +111,9 @@ export default {
       },
       immediate: true,
     },
+  },
+  created() {
+    this.initData();
   },
   methods: {
     // 初始化数据逻辑
@@ -163,6 +151,15 @@ export default {
           this.pickerValue = [0];
           if (!this.nocache) {
             uni.setStorageSync("cached_community_list", this.communityList);
+            const selected_community = uni.getStorageSync("selected_community") || null;
+            if (!selected_community) {
+              const selectedCommunity = this.communityList[0];
+              uni.setStorageSync("selected_community", selectedCommunity);
+              this.$emit("confirm", {
+                community: selectedCommunity,
+                location: this.mode === "select" ? this.locationInfo : null,
+              });
+            }
           }
         } else {
           uni.showToast({ title: res.msg || "获取社区列表失败", icon: "none" });
