@@ -324,7 +324,7 @@ export default {
   },
   methods: {
     getActive() {
-      active({ communityId: this.currentCommunity.communityId || null }).then(
+      active({ communityId: this.currentCommunity.communityId || "" }).then(
         (res) => {
           this.noticeList = res.data || [];
         }
