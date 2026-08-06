@@ -9,7 +9,6 @@
         <u-icon name="arrow-right" color="#2c405a" size="12"></u-icon>
       </view>
     </view>
-
     <!-- 2. 上下轮播的消息动态面板 -->
     <view class="notice-swiper-bar" v-if="noticeList.length">
       <u-icon name="volume-fill" color="#07c160" size="18"></u-icon>
@@ -27,7 +26,13 @@
         </swiper-item>
       </swiper>
     </view>
-
+    <view style="margin-bottom: 20rpx">
+      <image
+        style="width: 100%; border-radius: 20rpx"
+        src="https://izyedu.oss-cn-guangzhou.aliyuncs.com/wxjy/p21.png"
+        mode="widthFix"
+      />
+    </view>
     <!-- 3. 双核核心入口 -->
     <view class="action-grid">
       <view class="action-card card-fun" @click="navigateTo('fun')">

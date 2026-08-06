@@ -8,7 +8,6 @@
         <u-icon name="arrow-right" color="#999" size="10"></u-icon>
       </view>
     </view>
-
     <!-- 2. 搜索框区域 -->
     <view class="search-section">
       <view class="search-input-box">
@@ -94,7 +93,13 @@
         <text class="tips-text">当前社区暂无签约服务机构</text>
       </view>
     </view> -->
-
+    <view style="margin-bottom: 20rpx">
+      <image
+        style="width: 100%; border-radius: 20rpx"
+        src="https://izyedu.oss-cn-guangzhou.aliyuncs.com/wxjy/p31.png"
+        mode="widthFix"
+      />
+    </view>
     <!-- 5. 服务细项选择底部抽屉弹窗 (限制最多9项可见，超出的支持滑动) -->
     <u-popup
       :show="showDetailPopup"
