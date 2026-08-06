@@ -21,7 +21,12 @@
     >
       <view v-if="followList.length > 0" class="follow-list">
         <view v-for="item in followList" :key="item.id" class="follow-card">
-          <image class="avatar" :src="item.avatar" mode="aspectFill"></image>
+          <u-avatar
+            class="avatar"
+            :src="item.avatar"
+            mode="aspectFill"
+            size="104rpx"
+          ></u-avatar>
           <view class="follow-info">
             <text class="name">{{ item.name || item.phone }}</text>
             <text class="phone" v-if="item.name">{{ item.phone }}</text>
@@ -56,7 +61,7 @@
 </template>
 
 <script>
-import { page2 as getFollowPage } from '../../api/follow';
+import { page2 as getFollowPage } from "../../api/follow";
 
 export default {
   data() {
@@ -96,18 +101,18 @@ export default {
       try {
         const res = await getFollowPage({
           pageNumber: this.page,
-          pageSize: this.pageSize
+          pageSize: this.pageSize,
         });
 
-        if (res.code === '00000') {
+        if (res.code === "00000") {
           const listData = res.data?.content || [];
           this.totalFollows = res.data?.totalElements || 0;
 
-          const formattedList = listData.map(item => ({
+          const formattedList = listData.map((item) => ({
             id: item.id || item.followId,
             name: item.followerName,
             phone: item.followerPhone,
-            avatar: item.followerAvatar
+            avatar: item.followerAvatar,
           }));
 
           if (this.page === 1) {
@@ -116,7 +121,8 @@ export default {
             this.followList = this.followList.concat(formattedList);
           }
 
-          this.finished = res.data?.last ?? (formattedList.length < this.pageSize);
+          this.finished =
+            res.data?.last ?? formattedList.length < this.pageSize;
           this.page += 1;
         } else {
           uni.showToast({ title: res.msg || "获取记录失败", icon: "none" });
@@ -229,6 +235,7 @@ export default {
       }
 
       .follow-info {
+        margin-left: 24rpx;
         flex: 1;
         min-width: 0;
         display: flex;

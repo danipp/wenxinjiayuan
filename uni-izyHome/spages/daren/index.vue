@@ -35,11 +35,12 @@
             </text>
 
             <!-- 头像 -->
-            <image
+            <u-avatar
               class="user-avatar"
               :src="item.avatar"
               mode="aspectFill"
-            ></image>
+              size="96rpx"
+            ></u-avatar>
 
             <!-- 达人信息 -->
             <view class="user-info">
@@ -325,7 +326,7 @@ export default {
       .user-info {
         display: flex;
         flex-direction: column;
-
+        margin-left: 28rpx;
         .user-name {
           font-size: 30rpx;
           font-weight: bold;
